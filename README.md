@@ -5,6 +5,10 @@
 [![npm](https://img.shields.io/npm/v/@replenishradar/mcp-server)](https://www.npmjs.com/package/@replenishradar/mcp-server)
 [![MCP](https://img.shields.io/badge/MCP-compatible-blue)](https://modelcontextprotocol.io/)
 
+<a href="https://glama.ai/mcp/servers/ReplenishRadar/MCP">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/ReplenishRadar/MCP/badge" alt="replenishradar MCP server" />
+</a>
+
 ## What is it?
 
 The ReplenishRadar MCP server lets AI agents (Claude Desktop, custom agents, n8n workflows) query live multi-channel inventory data, request purchase order recommendations, create and manage POs, and trigger inventory syncs — with full human-in-the-loop safeguards.
