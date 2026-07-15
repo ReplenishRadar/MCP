@@ -1,5 +1,7 @@
 # @replenishradar/mcp-server
 
+[![smithery badge](https://smithery.ai/badge/pro/replenishradar)](https://smithery.ai/servers/pro/replenishradar)
+
 Connect AI agents to live [ReplenishRadar](https://replenishradar.com) inventory data. Works with Claude Desktop, OpenClaw, and any MCP-compatible client.
 
 ## Setup
