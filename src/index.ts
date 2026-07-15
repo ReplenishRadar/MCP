@@ -704,6 +704,44 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
+    "name": "rr_import_purchase_orders",
+    "description": "Import open and historical purchase orders from a CSV export (Stocky / Inventory Planner migration). One row per line item, grouped by po_number; both tools' column names are recognized. Records received quantities as a snapshot only - never moves stock. Idempotent on po_number. preview defaults to true (validate without writing); pass preview=false to commit.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "csv_content": {
+          "type": "string",
+          "description": "Raw CSV text. Required columns: po_number, vendor_name, sku, quantity. One row per line item; up to 500 POs / 5000 lines."
+        },
+        "preview": {
+          "type": "boolean",
+          "description": "Default true. Validates and returns what would import without writing. Pass false to commit the import."
+        },
+        "create_missing_vendors": {
+          "type": "boolean",
+          "description": "Default false. When true, suppliers not yet in the org are created as name-only stubs instead of erroring those POs."
+        },
+        "default_location_id": {
+          "type": "string",
+          "description": "Destination location UUID for PO rows without a warehouse column, when the org has more than one warehouse."
+        },
+        "import_cancelled": {
+          "type": "boolean",
+          "description": "Default false. When true, cancelled/void POs in the file are imported under their cancelled status instead of being skipped."
+        },
+        "default_lead_time_days": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3650,
+          "description": "Optional. Lead time in days (0-3650) pre-filled on any supplier stub this import creates, so the imported catalog isn't left with missing-lead-time gaps. Omit to set lead times later."
+        }
+      },
+      "required": [
+        "csv_content"
+      ]
+    }
+  },
+  {
     "name": "rr_update_purchase_order",
     "description": "Update a draft or in-review purchase order (notes, expected delivery date, vendor).",
     "inputSchema": {
@@ -1217,7 +1255,7 @@ async function callApi(toolName: string, input: Record<string, unknown>): Promis
 
 async function main() {
   const server = new Server(
-    { name: 'replenishradar', version: '1.0.6' },
+    { name: 'replenishradar', version: '1.0.8' },
     { capabilities: { tools: {} } },
   );
 
