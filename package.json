@@ -1,6 +1,6 @@
 {
   "name": "@replenishradar/mcp-server",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "mcpName": "io.github.ReplenishRadar/MCP",
   "description": "ReplenishRadar MCP server - connects Claude Desktop and other MCP clients to the ReplenishRadar REST API",
   "homepage": "https://replenishradar.com/docs/mcp",
@@ -28,15 +28,22 @@
     "README.md",
     "LICENSE",
     "server.json",
-    "tools.manifest.json"
+    "tools.manifest.json",
+    "scripts/check-public-package.mjs"
   ],
   "scripts": {
     "build": "tsc",
-    "test:parity": "node scripts/check-tool-parity.mjs",
-    "prepublishOnly": "npm run build"
+    "test:parity": "node scripts/check-public-package.mjs",
+    "test:public": "node scripts/check-public-package.mjs",
+    "prepublishOnly": "npm run test:public && npm run build && npm run test:public"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "overrides": {
+    "hono": "^4.12.25",
+    "path-to-regexp": "^8.4.0",
+    "fast-uri": "^3.1.2"
   },
   "devDependencies": {
     "typescript": "^5.0.0",

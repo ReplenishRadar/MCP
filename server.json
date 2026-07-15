@@ -2,17 +2,17 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.ReplenishRadar/MCP",
   "title": "ReplenishRadar",
-  "description": "Shopify + Amazon inventory planning, forecasting & replenishment over MCP (49 tools).",
+  "description": "Shopify + Amazon inventory planning, forecasting & replenishment over MCP (50 tools).",
   "repository": {
     "url": "https://github.com/ReplenishRadar/MCP",
     "source": "github"
   },
-  "version": "1.0.7",
+  "version": "1.0.8",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@replenishradar/mcp-server",
-      "version": "1.0.6",
+      "version": "1.0.8",
       "transport": {
         "type": "stdio"
       },
