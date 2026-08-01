@@ -218,13 +218,13 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     "name": "rr_list_items",
-    "description": "List catalog items with optional search, vendor filtering, and pagination. Returns SKU, display name, lead time, and supplier info.",
+    "description": "List catalog items with optional search, vendor filtering, pagination, and opt-in exact listing identity. Returns SKU, display name, lead time, supplier info, and optional Amazon ASIN/FNSKU evidence.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "search": {
           "type": "string",
-          "description": "Search by SKU or display name"
+          "description": "Search by canonical SKU or display name; required as an exact value with listing identity enabled"
         },
         "vendor_id": {
           "type": "string",
@@ -241,13 +241,17 @@ const TOOLS: ToolDefinition[] = [
         "offset": {
           "type": "integer",
           "description": "Pagination offset"
+        },
+        "include_listing_identity": {
+          "type": "boolean",
+          "description": "Requires an exact search value. Resolves an exact Amazon seller SKU and returns source listing, ASIN, and FNSKU evidence"
         }
       }
     }
   },
   {
     "name": "rr_get_sync_status",
-    "description": "Get recent data sync runs (Shopify, Amazon). Returns sync status, timing, and error details.",
+    "description": "Get recent data sync runs and optionally monitor one durable manual-sync receipt, including its retry attempts.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -258,6 +262,10 @@ const TOOLS: ToolDefinition[] = [
         "store_id": {
           "type": "string",
           "description": "Filter by store ID"
+        },
+        "sync_event_id": {
+          "type": "string",
+          "description": "Durable sync event ID returned by rr_trigger_sync"
         },
         "limit": {
           "type": "integer",
@@ -606,7 +614,7 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     "name": "rr_trigger_sync",
-    "description": "Trigger a data sync from Shopify or Amazon. Respects 5-minute cooldown to prevent spam.",
+    "description": "Durably queue a Shopify or Amazon data sync. Returns a sync_event_id receipt for rr_get_sync_status and respects the connector-wide 5-minute cooldown.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -620,7 +628,7 @@ const TOOLS: ToolDefinition[] = [
         },
         "store_id": {
           "type": "string",
-          "description": "Store ID (auto-resolved if omitted)"
+          "description": "Store ID. May be omitted only when exactly one eligible store exists for the connector"
         }
       },
       "required": [
@@ -1255,7 +1263,7 @@ async function callApi(toolName: string, input: Record<string, unknown>): Promis
 
 async function main() {
   const server = new Server(
-    { name: 'replenishradar', version: '1.0.8' },
+    { name: 'replenishradar', version: '1.1.0' },
     { capabilities: { tools: {} } },
   );
 

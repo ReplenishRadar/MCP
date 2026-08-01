@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "bearerToken"
+  ],
+  "properties": {
+    "bearerToken": {
+      "type": "string",
+      "description": "Full authorization value: Bearer rr_sk_YOUR_KEY",
+      "format": "password",
+      "writeOnly": true,
+      "minLength": 21,
+      "pattern": "^Bearer rr_sk_[A-Za-z0-9_-]{8,}$",
+      "x-from": {
+        "header": "replenishradar-authorization"
+      },
+      "x-to": {
+        "header": "Authorization"
+      }
+    }
+  },
+  "additionalProperties": false
+}
