@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "replenishradar": {
+      "type": "http",
+      "url": "https://api.replenishradar.com/api/mcp/oauth"
+    }
+  }
+}

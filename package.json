@@ -1,6 +1,6 @@
 {
   "name": "@replenishradar/mcp-server",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "mcpName": "io.github.ReplenishRadar/MCP",
   "description": "ReplenishRadar MCP server - connects Claude Desktop and other MCP clients to the ReplenishRadar REST API",
   "homepage": "https://replenishradar.com/docs/mcp",
@@ -35,22 +35,25 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test:parity": "node scripts/check-public-package.mjs",
-    "test:public": "node scripts/check-public-package.mjs",
-    "prepublishOnly": "npm run test:public && npm run build && npm run test:public"
+    "test:public": "node scripts/check-public-package.mjs --runtime dist",
+    "test:public:src": "node scripts/check-public-package.mjs --runtime src",
+    "test:public:contract": "node --test scripts/check-public-package.test.mjs",
+    "prepublishOnly": "npm run test:public:src && npm run build && npm run test:public"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0"
+    "@modelcontextprotocol/sdk": "^1.32.0"
   },
   "overrides": {
     "hono": "^4.12.25",
-    "@hono/node-server": "^2.0.12",
+    "@hono/node-server": "^2.1.5",
     "path-to-regexp": "^8.4.0",
-    "fast-uri": "^3.1.4"
+    "fast-uri": "^3.1.9",
+    "ip-address": "^10.7.4",
+    "body-parser": "^2.4.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
   },
   "engines": {
     "node": ">=20"

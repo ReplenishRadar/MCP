@@ -10,8 +10,26 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    concurrency: publish-mcp-registry
     steps:
+      # The Registry record names npm versions: publish only from main, and only once npm has every one.
+      - name: Require main
+        run: |
+          test "$GITHUB_REF" = "refs/heads/main" || { echo "Run this from main, not $GITHUB_REF."; exit 1; }
+
       - uses: actions/checkout@v4
+
+      - name: Require every npm version server.json names
+        run: |
+          node -e '
+            const { execFileSync } = require("node:child_process");
+            const pkgs = require("./server.json").packages.filter((p) => p.registryType === "npm");
+            if (!pkgs.length) throw new Error("server.json names no npm package");
+            for (const p of pkgs) {
+              const got = execFileSync("npm", ["view", `${p.identifier}@${p.version}`, "version"], { encoding: "utf8" }).trim();
+              if (got !== p.version) throw new Error(`${p.identifier}@${p.version} is not on npm yet; publish it first.`);
+            }
+          '
 
       - name: Install pinned MCP publisher
         env:
