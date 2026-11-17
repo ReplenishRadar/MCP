@@ -18,7 +18,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run test:public
+      - run: npm run test:public:src
+      - run: npm run test:public:contract
       - run: npm run build
       - run: npm run test:public
       - run: npm pack --dry-run

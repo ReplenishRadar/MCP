@@ -1,0 +1,166 @@
+name: Release
+
+# Two runs per release, with a person in between:
+#   1. Run it from main. It builds and checks the package (with no publishing rights), then STAGES the
+#      packed tarball on npm with npm Trusted Publishing (no token: npm trusts this workflow file by name).
+#      Nothing is public yet.
+#   2. A maintainer approves the staged version on npmjs.com (Staged Packages tab, Approve, 2FA).
+#   3. Run it again from main. It sees the version on npm, checks server.json matches the one inside the
+#      approved package, and publishes server.json to the official MCP Registry with GitHub OIDC.
+# npm side, once: package settings, Trusted Publisher, GitHub Actions, organization ReplenishRadar,
+# repository MCP, workflow filename release.yml, direct npm publish NOT allowed (staged only).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency: release
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.pkg.outputs.name }}
+      version: ${{ steps.pkg.outputs.version }}
+      published: ${{ steps.pkg.outputs.published }}
+    steps:
+      - name: Require main
+        run: |
+          test "$GITHUB_REF" = "refs/heads/main" || { echo "Run this from main, not $GITHUB_REF."; exit 1; }
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Read the version and whether npm has it
+        id: pkg
+        run: |
+          node -e '
+            const pkg = require("./package.json");
+            const npm = require("./server.json").packages.filter((p) => p.registryType === "npm");
+            if (npm.length !== 1) throw new Error(`server.json must name exactly one npm package, found ${npm.length}`);
+            if (npm[0].identifier !== pkg.name) throw new Error(`server.json names ${npm[0].identifier}, package.json is ${pkg.name}`);
+            if (npm[0].version !== pkg.version) throw new Error(`server.json names ${npm[0].version}, package.json is ${pkg.version}`);
+          '
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          # stdout carries the answer; stderr is read only to tell "not on npm" from "npm could not be asked".
+          if out=$(npm view "$name@$version" version 2> npm-view.err); then
+            test "$out" = "$version" || { echo "unexpected npm answer: $out"; exit 1; }
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          elif grep -q "code E404" npm-view.err; then
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "npm could not be asked about $name@$version:"; cat npm-view.err; exit 1
+          fi
+
+  build:
+    # Builds and packs with no publishing rights: dependency and test code never sees an OIDC token.
+    needs: version
+    if: needs.version.outputs.published == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Build and check
+        run: |
+          npm ci
+          npm run test:public:src
+          npm run test:public:contract
+          npm run build
+          npm run test:public
+          npm pack --ignore-scripts
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: '*.tgz'
+          if-no-files-found: error
+
+  stage:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Use an npm that supports staged publishing
+        run: npm install -g npm@11.21.2
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+
+      - name: Stage on npm for approval
+        env:
+          PKG: ${{ needs.version.outputs.name }}@${{ needs.version.outputs.version }}
+        run: |
+          set -- ./*.tgz
+          test "$#" -eq 1 || { echo "expected one packed tarball, found $#"; exit 1; }
+          packed=$(tar --extract --gzip --to-stdout --file "$1" package/package.json | node -p 'const p = JSON.parse(require("fs").readFileSync(0, "utf8")); `${p.name}@${p.version}`')
+          test "$packed" = "$PKG" || { echo "the tarball is $packed, this run releases $PKG"; exit 1; }
+          npm stage publish "$1" --access public --ignore-scripts
+          {
+            echo "### $PKG is staged, not published"
+            echo "Built from $GITHUB_SHA. Approve it on npmjs.com (Staged Packages tab), then run this workflow again on main to publish to the MCP Registry."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  registry:
+    needs: version
+    if: needs.version.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Require the Registry record to match the approved package
+        env:
+          PKG: ${{ needs.version.outputs.name }}@${{ needs.version.outputs.version }}
+        run: |
+          approved=$(mktemp -d)
+          # Fetched from outside the checkout, so no repository config can change what is compared.
+          (cd "$approved" && npm pack "$PKG" --ignore-scripts && tar --extract --gzip --file ./*.tgz)
+          cmp server.json "$approved/package/server.json" || {
+            echo "server.json on main differs from the one inside the approved $PKG."
+            echo "Run this from the commit that was staged, or release a new version."
+            exit 1
+          }
+
+      - name: Install pinned MCP publisher
+        env:
+          PUBLISHER_VERSION: v1.8.0
+          PUBLISHER_SHA256: 1370446bbe74d562608e8005a6ccce02d146a661fbd78674e11cc70b9618d6cf
+        run: |
+          curl --fail --location --silent --show-error \
+            --output mcp-publisher.tar.gz \
+            "https://github.com/modelcontextprotocol/registry/releases/download/${PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz"
+          echo "${PUBLISHER_SHA256}  mcp-publisher.tar.gz" | sha256sum --check --strict
+          tar --extract --gzip --file mcp-publisher.tar.gz mcp-publisher
+          chmod +x mcp-publisher
+
+      - name: Publish to the MCP Registry
+        run: |
+          ./mcp-publisher validate
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish

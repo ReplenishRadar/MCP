@@ -19,6 +19,13 @@ type ToolDefinition = {
     properties?: Record<string, unknown>;
     required?: string[];
   };
+  annotations?: {
+    title?: string;
+    readOnlyHint?: boolean;
+    destructiveHint?: boolean;
+    idempotentHint?: boolean;
+    openWorldHint?: boolean;
+  };
 };
 
 const API_KEY = process.env.REPLENISHRADAR_API_KEY;
@@ -31,100 +38,218 @@ if (!API_KEY) {
 
 const TOOLS: ToolDefinition[] = [
   {
-    "name": "rr_get_stockout_risk",
-    "description": "Get items at risk of stocking out, sorted by days to stockout. Filter by risk level, SKU, or store.",
+    "name": "rr_get_suggested_purchase_orders",
+    "description": "Get AI-suggested purchase orders based on stockout risk, demand, and supplier reliability.",
     "inputSchema": {
       "type": "object",
       "properties": {
-        "risk_level": {
+        "vendor_id": {
           "type": "string",
-          "description": "Filter by risk level (critical, high, medium, low)"
+          "description": "Filter by vendor"
         },
-        "sku": {
+        "status": {
           "type": "string",
-          "description": "Filter by SKU"
+          "description": "Filter: suggested, approved"
         },
         "store_id": {
           "type": "string",
-          "description": "Filter by store ID"
+          "description": "Only suggestions for this store."
         },
         "limit": {
           "type": "integer",
-          "description": "Max results (default 100, max 500)"
+          "minimum": 1,
+          "maximum": 500,
+          "default": 100,
+          "description": "Rows per page (default 100, max 500)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
         }
-      }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Suggested Purchase Orders",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
-    "name": "rr_get_inventory_position",
-    "description": "Get stock-by-location breakdown for a single item. Returns on-hand quantities across all warehouses and stores.",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "item_id": {
-          "type": "string",
-          "description": "Item UUID"
-        },
-        "sku": {
-          "type": "string",
-          "description": "Canonical SKU (used if item_id not provided)"
-        }
-      }
-    }
-  },
-  {
-    "name": "rr_get_demand_forecast",
-    "description": "Get demand forecast statistics (mu/sigma) for a SKU or item. Returns active forecast windows.",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "sku": {
-          "type": "string",
-          "description": "Canonical SKU"
-        },
-        "item_id": {
-          "type": "string",
-          "description": "Item UUID"
-        },
-        "window_days": {
-          "type": "integer",
-          "description": "Filter by forecast window (e.g., 7, 14, 30)"
-        },
-        "store_id": {
-          "type": "string",
-          "description": "Filter by store ID"
-        }
-      }
-    }
-  },
-  {
-    "name": "rr_get_suggested_purchase_orders",
-    "description": "Get system-generated purchase order suggestions based on demand forecasts and stockout risk.",
+    "name": "rr_list_purchase_orders",
+    "description": "List purchase orders with status, amounts, and delivery info. supplier_delivery_status is the supplier email outcome: pending (being sent), emailed, partial (some recipients only), queued (will send after the recipient's quiet hours), unknown (could not confirm, check with the supplier before resending), failed, or null (never emailed).",
     "inputSchema": {
       "type": "object",
       "properties": {
         "status": {
           "type": "string",
-          "description": "Filter by status (suggested, approved, dismissed)"
+          "description": "Filter: draft, sent, received, cancelled (comma-separated for multiple)"
         },
         "vendor_id": {
           "type": "string",
-          "description": "Filter by vendor/supplier ID"
+          "description": "Filter by vendor"
         },
-        "store_id": {
+        "search": {
           "type": "string",
-          "description": "Filter by store ID"
+          "description": "Part of a PO number to match."
         },
         "limit": {
           "type": "integer",
-          "description": "Max results (default 100, max 500)"
+          "minimum": 1,
+          "maximum": 200,
+          "default": 50,
+          "description": "Rows per page (default 50, max 200)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Deprecated: rows to skip. Use cursor; it stays correct while rows change."
         }
-      }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "List Purchase Orders",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_get_purchase_order",
+    "description": "Get detailed info for a specific purchase order. supplier_delivery_status says whether the supplier got the PO email: pending, emailed, partial, queued, unknown (could not confirm, check with the supplier before resending), failed, or null (never emailed). The lines come in pages, oldest first in a stable order: pass next_cursor as cursor until has_more is false; the purchase order's own fields are on every page. Landed costs are allocated over all lines, so each line's landed_cost_per_unit is the whole order's figure; the cost scope that says whether those costs can be relied on is cost_scope on the purchase order, not on each line.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "po_id": {
+          "type": "string",
+          "description": "The purchase order id or its PO number, for example REV-PO-002"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 500,
+          "description": "Rows per page (default 500, max 1000)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
+        }
+      },
+      "required": [
+        "po_id"
+      ]
+    },
+    "annotations": {
+      "title": "Get Purchase Order",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_get_po_pdf",
+    "description": "Find where to open a purchase order as a PDF. Returns the PO number and the address in ReplenishRadar that renders the PDF, not the file itself.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "po_id": {
+          "type": "string",
+          "description": "The purchase order id or its PO number, for example REV-PO-002."
+        }
+      },
+      "required": [
+        "po_id"
+      ]
+    },
+    "annotations": {
+      "title": "Get Po Pdf",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_get_po_documents",
+    "description": "List the documents attached to a purchase order, newest first.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "po_id": {
+          "type": "string",
+          "description": "The purchase order id or its PO number, for example REV-PO-002"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 100,
+          "description": "Rows per page (default 100, max 500)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
+        }
+      },
+      "required": [
+        "po_id"
+      ]
+    },
+    "annotations": {
+      "title": "Get Po Documents",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_get_po_notes",
+    "description": "Get all notes for a purchase order, most recent first.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "po_id": {
+          "type": "string",
+          "description": "The purchase order id or its PO number, for example REV-PO-002"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 1000,
+          "description": "Rows per page (default 1000, max 1000)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
+        }
+      },
+      "required": [
+        "po_id"
+      ]
+    },
+    "annotations": {
+      "title": "Get Po Notes",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_get_replenishment_actions",
-    "description": "List canonical buyer work across supplier PO, transfer, combined, and no-action replenishment outcomes. Prefer this over suggested purchase orders or alerts for deciding what action to take next.",
+    "description": "List canonical replenishment actions for buyer work. Prefer this over suggested purchase orders or alerts when deciding what action the user should take next.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -138,251 +263,316 @@ const TOOLS: ToolDefinition[] = [
         },
         "store_id": {
           "type": "string",
-          "description": "Filter by parent store or child origin store"
+          "description": "Optional store ID filter"
         },
         "origin_location_id": {
           "type": "string",
-          "description": "Filter by child origin location UUID"
+          "description": "Optional child origin location filter"
         },
         "source_location_id": {
           "type": "string",
-          "description": "Filter by parent source location UUID"
+          "description": "Optional parent source location filter"
         },
         "destination_location_id": {
           "type": "string",
-          "description": "Filter by parent or child destination location UUID"
+          "description": "Optional parent or child destination location filter"
         },
         "sku": {
           "type": "string",
-          "description": "Filter by child SKU"
+          "description": "Optional SKU filter"
         },
         "limit": {
           "type": "integer",
-          "description": "Max results (default 100, max 500)"
+          "minimum": 1,
+          "maximum": 500,
+          "default": 100,
+          "description": "Actions per page (default 100, max 500)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
         }
-      }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Replenishment Actions",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_get_replenishment_action",
-    "description": "Get one replenishment action with child item provenance, immutable snapshots, linked execution records, and event history.",
+    "description": "Get one replenishment action with child item provenance, snapshots, linked execution records, and event history. The products come in pages: pass next_cursor as cursor until has_more is false; the action's own fields are on every page. The action carries its newest events, oldest first, up to 100 (fewer when they are long); events_total is how many it has and events_truncated is true when older ones were left out, which are on the action's page in the app. Long lists of SKUs or locations on the action are capped at 100 with a <name>_total beside them; the product pages are the complete list.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "action_id": {
           "type": "string",
-          "description": "Replenishment action UUID"
+          "description": "Replenishment action ID"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 100,
+          "description": "Rows per page (default 100, max 500)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
         }
       },
       "required": [
         "action_id"
       ]
+    },
+    "annotations": {
+      "title": "Get Replenishment Action",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
-    "name": "rr_get_alerts",
-    "description": "Get inventory alerts (stockout warnings, sync failures, reorder points). Supports filtering by type, severity, status, and SKU.",
+    "name": "rr_get_transfer_exclusions",
+    "description": "Why products were, or were not, moved between the seller's own locations on the last transfer run. Pass a sku for one product's answer; omit it for the whole population with counts by reason. Use this when a seller asks why something was not transferred or restocked from another location, rather than inferring it from an empty transfer-suggestions list.",
     "inputSchema": {
       "type": "object",
       "properties": {
-        "status": {
-          "type": "string",
-          "description": "Filter by status (active, acknowledged, snoozed, resolved, all)"
-        },
-        "alert_type": {
-          "type": "string",
-          "description": "Filter by alert type"
-        },
-        "severity": {
-          "type": "string",
-          "description": "Filter by severity"
-        },
         "sku": {
           "type": "string",
-          "description": "Filter by SKU"
-        },
-        "store_id": {
-          "type": "string",
-          "description": "Filter by store ID"
+          "description": "One product's answer. Omit for the population. There is deliberately no store filter: the transfer census is org-grain, because transfer generation resolves its locations org-wide."
         },
         "limit": {
           "type": "integer",
-          "description": "Max results (default 50, max 500)"
+          "minimum": 1,
+          "maximum": 2000,
+          "default": 2000,
+          "description": "Rows per page (default 2000, max 2000)."
         },
-        "offset": {
-          "type": "integer",
-          "description": "Pagination offset"
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
         }
-      }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Transfer Exclusions",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_get_stockout_risk",
+    "description": "Get stockout risk assessment for SKUs. Returns risk levels, days to stockout, velocity, and planned_order: the quantity the PO planner suggests ordering (use planned_order.qty, not suggested_qty). A row with planned_order null and a name_review_hold has an order waiting on the supplier name review, which is not the same as no order suggested. Only positions the planner could evaluate are listed: products without enough sales history and products excluded from planning are left out, so absence from this list, or an empty list, is not evidence that stock is healthy.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sku": {
+          "type": "string",
+          "description": "Optional SKU filter"
+        },
+        "store_id": {
+          "type": "string",
+          "description": "Optional store ID filter"
+        },
+        "risk_level": {
+          "type": "string",
+          "description": "Filter: critical, high, medium, low"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 100,
+          "description": "Rows per page (default 100, max 500)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
+        }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Stockout Risk",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_get_inventory_position",
+    "description": "Get current inventory positions (on-hand, in-transit, sellable) for a SKU. sellable_qty is what each location can sell now (Amazon FBA: on_hand, Amazon's fulfillable units). available_qty is the channel's own figure, null where the channel reports none (Amazon); null means not reported, not zero. SKU is required.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sku": {
+          "type": "string",
+          "description": "SKU to look up. Give this or item_id."
+        },
+        "item_id": {
+          "type": "string",
+          "description": "The product's item id. Give this or sku."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 1000,
+          "description": "Rows per page (default 1000, max 1000)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
+        }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Inventory Position",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_get_demand_forecast",
+    "description": "Get demand forecast for a SKU including predicted demand, seasonal factors, and the item's forecast track record: whether its forecast has historically beaten a naive same-as-last-week baseline, or whether there is too little scored history to judge. seasonal_profile on the first page gives the 12-month seasonal curve behind the forecast's seasonal_index, which level supplied it (item, family, supplier or store), how it is graded, and the coverage window with the dates the index averages over. SKU is required.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sku": {
+          "type": "string",
+          "description": "SKU to forecast. Give this or item_id."
+        },
+        "window_days": {
+          "type": "integer",
+          "description": "Forecast horizon in days (default 30)"
+        },
+        "store_id": {
+          "type": "string",
+          "description": "Optional store ID filter"
+        },
+        "item_id": {
+          "type": "string",
+          "description": "The product's item id. Give this or sku."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 100,
+          "description": "Rows per page (default 100, max 500)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
+        }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Demand Forecast",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_list_items",
-    "description": "List catalog items with optional search, vendor filtering, pagination, and opt-in exact listing identity. Returns SKU, display name, lead time, supplier info, and optional Amazon ASIN/FNSKU evidence.",
+    "description": "List inventory items with optional filters. For an exact SKU identity question, provide the exact value in search and set include_listing_identity=true to resolve Amazon seller SKUs and return source listing identifiers such as ASIN and FNSKU.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "search": {
           "type": "string",
-          "description": "Search by canonical SKU or display name; required as an exact value with listing identity enabled"
-        },
-        "vendor_id": {
-          "type": "string",
-          "description": "Filter by primary supplier ID"
-        },
-        "needs_review": {
-          "type": "boolean",
-          "description": "Filter items flagged for review"
+          "description": "Search by name or SKU"
         },
         "limit": {
           "type": "integer",
-          "description": "Max results (default 100, max 500)"
-        },
-        "offset": {
-          "type": "integer",
-          "description": "Pagination offset"
+          "minimum": 1,
+          "maximum": 500,
+          "default": 100,
+          "description": "Items per page (default 100, max 500)."
         },
         "include_listing_identity": {
           "type": "boolean",
-          "description": "Requires an exact search value. Resolves an exact Amazon seller SKU and returns source listing, ASIN, and FNSKU evidence"
-        }
-      }
-    }
-  },
-  {
-    "name": "rr_get_sync_status",
-    "description": "Get recent data sync runs and optionally monitor one durable manual-sync receipt, including its retry attempts.",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "connector_type": {
-          "type": "string",
-          "description": "Filter by connector (shopify, amazon)"
+          "description": "Set true only with an exact search value for a SKU identity question. Resolves an exact Amazon seller SKU even when it differs from the canonical SKU and returns listing source, ASIN, and FNSKU evidence."
         },
-        "store_id": {
-          "type": "string",
-          "description": "Filter by store ID"
+        "needs_review": {
+          "type": "boolean",
+          "description": "true: only items flagged for review; false: only items not flagged."
         },
-        "sync_event_id": {
+        "vendor_id": {
           "type": "string",
-          "description": "Durable sync event ID returned by rr_trigger_sync"
+          "description": "Only items whose primary supplier is this supplier id (from rr_list_suppliers)."
         },
-        "limit": {
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
+        },
+        "offset": {
           "type": "integer",
-          "description": "Max results (default 10, max 100)"
+          "minimum": 0,
+          "description": "Deprecated: rows to skip. Use cursor; it stays correct while rows change."
         }
-      }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "List Items",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_list_suppliers",
-    "description": "List all suppliers/vendors for the organization. Optionally include vendor SKU mappings.",
+    "description": "List suppliers with performance metrics.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "include_skus": {
           "type": "boolean",
-          "description": "Include vendor SKU mappings (default false)"
-        }
-      }
-    }
-  },
-  {
-    "name": "rr_list_purchase_orders",
-    "description": "List purchase orders with filtering by status, vendor, and search. Supports pagination.",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "status": {
-          "type": "string",
-          "description": "Filter by status (comma-separated: draft,sent,approved,received,cancelled)"
-        },
-        "vendor_id": {
-          "type": "string",
-          "description": "Filter by vendor ID"
-        },
-        "search": {
-          "type": "string",
-          "description": "Search by PO number"
+          "description": "Also list each supplier's SKUs. Default false."
         },
         "limit": {
           "type": "integer",
-          "description": "Max results (default 50, max 200)"
+          "minimum": 1,
+          "maximum": 1000,
+          "default": 1000,
+          "description": "Rows per page (default 1000, max 1000)."
         },
-        "offset": {
-          "type": "integer",
-          "description": "Pagination offset"
-        }
-      }
-    }
-  },
-  {
-    "name": "rr_get_purchase_order",
-    "description": "Get a single purchase order with full details including line items and vendor info.",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "po_id": {
+        "cursor": {
           "type": "string",
-          "description": "Purchase order UUID"
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
         }
       },
-      "required": [
-        "po_id"
-      ]
-    }
-  },
-  {
-    "name": "rr_get_po_pdf",
-    "description": "Get the PDF generation endpoint for a purchase order.",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "po_id": {
-          "type": "string",
-          "description": "Purchase order UUID"
-        }
-      },
-      "required": [
-        "po_id"
-      ]
-    }
-  },
-  {
-    "name": "rr_get_po_documents",
-    "description": "List documents attached to a purchase order (invoices, packing slips, etc.).",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "po_id": {
-          "type": "string",
-          "description": "Purchase order UUID"
-        }
-      },
-      "required": [
-        "po_id"
-      ]
-    }
-  },
-  {
-    "name": "rr_get_po_notes",
-    "description": "Get notes/comments on a purchase order.",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "po_id": {
-          "type": "string",
-          "description": "Purchase order UUID"
-        }
-      },
-      "required": [
-        "po_id"
-      ]
+      "required": []
+    },
+    "annotations": {
+      "title": "List Suppliers",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_get_sales_history",
-    "description": "Get daily sales history (units sold, revenue) for a SKU or store over a date range.",
+    "description": "Get sales history rows, newest first, over a time period. total is the exact number of rows in the window; count is the rows in this page. When has_more is true, pass next_cursor as cursor to get the next page. Answer totals and rankings from total or rr_get_top_sellers rather than from the rows, and do not conclude anything about the whole window from a partial walk.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -390,161 +580,465 @@ const TOOLS: ToolDefinition[] = [
           "type": "string",
           "description": "Filter by SKU"
         },
-        "store_id": {
-          "type": "string",
-          "description": "Filter by store ID"
-        },
         "days": {
           "type": "integer",
-          "description": "Lookback period in days (default 30, max 90)"
+          "description": "Lookback days (default 30, max 90)"
+        },
+        "granularity": {
+          "type": "string",
+          "enum": [
+            "day",
+            "month"
+          ],
+          "description": "day (default) returns daily rows for up to 90 days. month returns one row per calendar month for up to 36 months, for one SKU or, with no SKU, the store's totals."
+        },
+        "months": {
+          "type": "integer",
+          "description": "Months of history when granularity is month (default 12, max 36). Net demand units; the newest month may be partial."
+        },
+        "store_id": {
+          "type": "string",
+          "description": "Only sales from this store."
         },
         "limit": {
           "type": "integer",
-          "description": "Max results (default 1000, max 5000)"
+          "minimum": 1,
+          "maximum": 5000,
+          "default": 1000,
+          "description": "Rows per page (default 1000, max 5000)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
         }
-      }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Sales History",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_get_top_sellers",
-    "description": "Get top-selling SKUs ranked by units sold over a date range.",
+    "description": "Get top-selling products ranked by units sold over the whole window, one row per product however many SKU labels its sales carry. total_skus is how many products have sales rows in the window (the name is historical); truncated_to_top_n is true when that is more than the page returned (this ranking has no next page).",
     "inputSchema": {
       "type": "object",
       "properties": {
         "days": {
           "type": "integer",
-          "description": "Lookback period in days (default 30, max 90)"
+          "description": "Lookback days (default 30, max 90)"
         },
-        "store_id": {
-          "type": "string",
-          "description": "Filter by store ID"
+        "months": {
+          "type": "integer",
+          "description": "Rank over this many calendar months instead of days (max 36), on net demand units. Use for a window longer than 90 days."
         },
         "limit": {
           "type": "integer",
-          "description": "Max results (default 20, max 100)"
+          "description": "Number of results (default 20, max 100)"
+        },
+        "store_id": {
+          "type": "string",
+          "description": "Only sales from this store."
         }
-      }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Top Sellers",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_get_slow_movers",
-    "description": "Overstock / dead-stock / slow movers: SKUs you are holding (on-hand > 0) that aren't selling. Returns on_hand, units sold in the window, and a dead_stock flag. Inventory-first, so never-sold dead stock is surfaced too.",
+    "description": "Overstock / dead-stock / slow movers: SKUs you are HOLDING (on-hand > 0) that aren't selling - capital tied up. Returns on_hand, units sold in the window, and a dead_stock flag: held with no sale in the last 12 months, whatever the window (null, with dead_stock_message saying why, while the sales history is too short to decide). dead_stock_summary is the seller's total dead-stock count across every store, whatever store_id asks for, and its value at cost when costs may be shown. Inventory-first, so never-sold dead stock is surfaced too. total is how many held SKUs there are; has_more is true when that is more than the page returned.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "days": {
           "type": "integer",
-          "description": "Lookback period in days (default 30, max 90)"
-        },
-        "store_id": {
-          "type": "string",
-          "description": "Filter by store ID"
+          "description": "Lookback window in days (default 30, max 90)"
         },
         "limit": {
           "type": "integer",
-          "description": "Max results (default 20, max 100)"
+          "minimum": 1,
+          "maximum": 500,
+          "default": 20,
+          "description": "Number of slow movers per page (default 20, max 500)."
+        },
+        "store_id": {
+          "type": "string",
+          "description": "Only sales from this store."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
         }
-      }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Slow Movers",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_get_inventory_value",
-    "description": "Get total inventory value and per-SKU breakdown. Cost/value fields require sensitive_read capability.",
+    "description": "Get total inventory value (units and value across all active locations).",
     "inputSchema": {
       "type": "object",
       "properties": {
         "store_id": {
           "type": "string",
-          "description": "Filter by store ID"
+          "description": "Only stock at this store's locations."
         }
-      }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Inventory Value",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_get_sku_health",
-    "description": "Get a high-level SKU health snapshot: stockout risk counts by level and active alert counts by type.",
+    "description": "Org-wide SKU health snapshot: stockout-risk counts by level and active alert counts by type.",
     "inputSchema": {
       "type": "object",
-      "properties": {}
+      "properties": {},
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Sku Health",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_get_lost_sales",
-    "description": "Estimate lost sales from current stockouts based on demand velocity and days out of stock.",
+    "description": "Get estimated lost sales due to stockouts.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "days": {
           "type": "integer",
-          "description": "Analysis period in days (default 30, max 90)"
+          "description": "Lookback days (default 30)"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 50,
+          "description": "Rows per page (default 50, max 500)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
         }
-      }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Lost Sales",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_get_sync_status",
+    "description": "Get sync status for connected stores. Pass the sync_event_id returned by rr_trigger_sync to get that request's own receipt (sync_event) and its attempts (sync_event_attempts) alongside recent runs.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "sync_event_id": {
+          "type": "string",
+          "description": "Optional sync-event UUID from rr_trigger_sync. Adds that request's receipt and attempt history to the response."
+        },
+        "connector_type": {
+          "type": "string",
+          "enum": [
+            "shopify",
+            "amazon"
+          ],
+          "description": "Optional filter for the recent-runs list."
+        },
+        "store_id": {
+          "type": "string",
+          "description": "Optional store UUID filter for the recent-runs list."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 10,
+          "description": "Recent runs per page (default 10, max 100)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
+        }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Sync Status",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_get_store_health",
-    "description": "Diagnose connected store health, sync status, and connection errors.",
+    "description": "Diagnose each connected store's health. Returns per-store connection status, hours since last sync, and a diagnosis enum (disconnected / error / pending_setup / sync_paused / stale / healthy), plus a summary with primary_diagnosis. Call FIRST for any sync-failure, missing-inventory, or 'why isn't X working' question - a disconnected store is upstream of every sync error it has.",
     "inputSchema": {
       "type": "object",
-      "properties": {}
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 50,
+          "description": "Rows per page (default 50, max 200)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
+        }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Store Health",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_get_data_freshness",
-    "description": "Get data freshness by inventory dimension before quoting operational numbers.",
+    "description": "Get per-dimension freshness status (sync, positions, demand, risk, recommendations) with staleness thresholds and a primary_concern summary. Use it when the user asks whether the numbers are up to date, or to explain a figure that looks stale.",
     "inputSchema": {
       "type": "object",
-      "properties": {}
+      "properties": {},
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Data Freshness",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_get_setup_status",
-    "description": "Get onboarding milestones, setup completion state, and next recommended step.",
+    "description": "Check onboarding milestones and compute the next setup step. Returns counts (connected_stores, suppliers, items), activation milestones, and a next_step enum (connect_store, wait_for_sync, add_supplier, run_first_forecast, review_first_suggested_po, done). Call for onboarding questions or before suggesting reorder points / deeper features - don't advise a number when next_step is still connect_store.",
     "inputSchema": {
       "type": "object",
-      "properties": {}
+      "properties": {},
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Setup Status",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_get_recent_activity",
-    "description": "Get recent alerts, purchase orders, and sync activity counts.",
+    "description": "Summarize the last N days of org activity (default 7, max 30). Returns counts only - alerts created/resolved, POs created/received, sync runs total/failed, and a one-word headline (sync_health_degraded / alert_storm / receiving_active / normal / quiet_week). No monetary fields. Use for 'what should I focus on today?' or 'what happened this week?' - one call replaces a fan-out of five.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "days": {
           "type": "integer",
-          "description": "Lookback period in days (default 7, max 30)"
+          "description": "Window in days (1-30, default 7)"
         }
-      }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Recent Activity",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_get_alerts",
+    "description": "Get active alerts (stockout warnings, sync failures, anomalies).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "alert_type": {
+          "type": "string",
+          "description": "Alert type filter"
+        },
+        "status": {
+          "type": "string",
+          "description": "Filter: active, acknowledged"
+        },
+        "store_id": {
+          "type": "string",
+          "description": "Only alerts for this store."
+        },
+        "sku": {
+          "type": "string",
+          "description": "Only alerts for this product, under any SKU it has had."
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "info",
+            "warning",
+            "critical"
+          ],
+          "description": "Only alerts of this severity."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 50,
+          "description": "Rows per page (default 50, max 500)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Deprecated: rows to skip. Use cursor; it stays correct while rows change."
+        }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Get Alerts",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_get_agent_context",
+    "description": "Read one saved agent context entry by namespace and key. Expired entries are not returned. The namespace must have been granted to this API key by an admin.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "description": "A context namespace this key has been granted, for example supplier_rules."
+        },
+        "key": {
+          "type": "string",
+          "description": "The entry's key within the namespace, up to 200 characters."
+        }
+      },
+      "required": [
+        "namespace",
+        "key"
+      ]
+    },
+    "annotations": {
+      "title": "Get Agent Context",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_list_agent_context",
+    "description": "List the entries stored under an agent context namespace, most recently updated first.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "namespace": {
+          "type": "string",
+          "description": "Namespace to list"
+        },
+        "key_prefix": {
+          "type": "string",
+          "description": "Only keys starting with this prefix"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 50,
+          "description": "Rows per page (default 50, max 200)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
+        }
+      },
+      "required": [
+        "namespace"
+      ]
+    },
+    "annotations": {
+      "title": "List Agent Context",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "search_knowledge",
-    "description": "Search ReplenishRadar product knowledge for grounded answers.",
+    "description": "Search the ReplenishRadar knowledge base for product features, best practices, and inventory management concepts. Use for questions that aren't answered by the seller's live data.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "query": {
           "type": "string",
-          "description": "Knowledge search query"
+          "description": "Natural-language search query"
         },
         "top_k": {
           "type": "integer",
-          "description": "Maximum number of results"
-        },
-        "limit": {
-          "type": "integer",
-          "description": "Alias for top_k"
+          "description": "Number of results to return (default 5, max 10)"
         }
       },
       "required": [
         "query"
       ]
+    },
+    "annotations": {
+      "title": "Search Knowledge",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_evaluate_fit",
-    "description": "Evaluate whether ReplenishRadar fits your use case (deterministic ICP + tier match) and capture demand signal. Mirrors the public agent-intake survey; reads no org data.",
+    "description": "Check whether ReplenishRadar fits a seller from a few facts about their business, and get a fit verdict. Reads no store data and needs none. Answers can be sent as fields or nested under answers; pass the returned attribution_token on a follow-up call to continue.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -558,7 +1052,7 @@ const TOOLS: ToolDefinition[] = [
               "other"
             ]
           },
-          "description": "Sales channels you sell on"
+          "description": "Where the seller sells."
         },
         "sku_count_band": {
           "type": "string",
@@ -570,11 +1064,12 @@ const TOOLS: ToolDefinition[] = [
             "20k_50k",
             "over_50k"
           ],
-          "description": "Approximate SKU count band"
+          "description": "Roughly how many products they stock."
         },
         "store_count": {
           "type": "integer",
-          "description": "Number of stores"
+          "minimum": 0,
+          "description": "How many stores they run."
         },
         "primary_pain": {
           "type": "string",
@@ -585,7 +1080,7 @@ const TOOLS: ToolDefinition[] = [
             "po_automation",
             "fba"
           ],
-          "description": "Primary inventory pain"
+          "description": "The inventory problem they most want solved."
         },
         "autonomy_intent": {
           "type": "string",
@@ -594,7 +1089,11 @@ const TOOLS: ToolDefinition[] = [
             "draft",
             "autonomous"
           ],
-          "description": "How autonomously the agent will act"
+          "description": "How much the agent will do: read only, prepare drafts, or act."
+        },
+        "answers": {
+          "type": "object",
+          "description": "The same answers as one object, instead of the fields above. Any other question from the public agent-intake survey may be included."
         },
         "tier": {
           "type": "string",
@@ -603,117 +1102,143 @@ const TOOLS: ToolDefinition[] = [
             "B",
             "C"
           ],
-          "description": "Intake tier reached"
+          "description": "Which question set these answers complete. Default A."
         },
         "attribution_token": {
           "type": "string",
-          "description": "Opaque token to thread a multi-step evaluation session"
+          "description": "The token a previous call returned, to continue the same evaluation."
         }
-      }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Evaluate Fit",
+      "readOnlyHint": false,
+      "openWorldHint": true,
+      "destructiveHint": false,
+      "idempotentHint": false
     }
   },
   {
-    "name": "rr_trigger_sync",
-    "description": "Durably queue a Shopify or Amazon data sync. Returns a sync_event_id receipt for rr_get_sync_status and respects the connector-wide 5-minute cooldown.",
+    "name": "rr_submit_feedback",
+    "description": "Send feedback to the ReplenishRadar team on the user's behalf. Call it only after the user has said yes to your question \"Want me to pass this to the product team?\" in this conversation. Describe what the user wanted and what happened, in your own words, with no names, contact details, credentials, or store data beyond what the report needs. After it returns success, tell the user what you sent. Sending the same message twice returns the first report and files no second one.",
     "inputSchema": {
       "type": "object",
       "properties": {
-        "connector_type": {
+        "type": {
           "type": "string",
           "enum": [
-            "shopify",
-            "amazon"
+            "bug",
+            "suggestion",
+            "support",
+            "other"
           ],
-          "description": "Platform to sync from"
+          "description": "bug: something is broken or wrong. suggestion: something the user wishes ReplenishRadar did. support: the user needs help. other: anything else."
         },
-        "store_id": {
+        "message": {
           "type": "string",
-          "description": "Store ID. May be omitted only when exactly one eligible store exists for the connector"
+          "minLength": 10,
+          "maxLength": 4000,
+          "description": "What the user was trying to do, what happened, and what they expected."
+        },
+        "subject": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Optional one-line summary."
+        },
+        "impact": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "description": "Optional: how much this is holding the user back."
+        },
+        "related_tool": {
+          "type": "string",
+          "description": "Optional: the ReplenishRadar tool the feedback is about, by name."
         }
       },
       "required": [
-        "connector_type"
+        "type",
+        "message"
       ]
-    }
-  },
-  {
-    "name": "rr_acknowledge_alert",
-    "description": "Acknowledge an active alert with an optional note.",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "alert_id": {
-          "type": "string",
-          "description": "Alert UUID"
-        },
-        "note": {
-          "type": "string",
-          "description": "Optional acknowledgement note"
-        }
-      },
-      "required": [
-        "alert_id"
-      ]
+    },
+    "annotations": {
+      "title": "Submit Feedback",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false
     }
   },
   {
     "name": "rr_create_purchase_order",
-    "description": "Create a new purchase order (always created as draft). Include line items with SKUs and quantities.",
+    "description": "Create a draft purchase order for a vendor. Status is ALWAYS 'draft' - agents cannot create approved/sent POs directly. Use rr_request_approval to request approval; the PO must be approved before it can be sent. Returns the new PO + items_added count.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "vendor_id": {
           "type": "string",
-          "description": "Supplier/vendor UUID"
+          "description": "The supplier's id, from rr_list_suppliers."
         },
         "destination_location_id": {
           "type": "string",
-          "description": "Exact receiving location UUID"
-        },
-        "action_id": {
-          "type": "string",
-          "description": "Optional replenishment action UUID to link this PO to"
-        },
-        "po_number": {
-          "type": "string",
-          "description": "Custom PO number (auto-generated if omitted)"
-        },
-        "notes": {
-          "type": "string",
-          "description": "PO notes"
-        },
-        "expected_delivery_date": {
-          "type": "string",
-          "description": "Expected delivery date (ISO 8601)"
+          "description": "The id of the location the goods will arrive at."
         },
         "items": {
           "type": "array",
-          "description": "Line items",
+          "description": "Required line items: [{sku, quantity, unit_cost}, ...]. The server validates quantities, constraints, and trusted cost fallbacks.",
           "items": {
             "type": "object",
             "properties": {
               "sku": {
-                "type": "string"
+                "type": "string",
+                "description": "Item SKU to order."
               },
               "quantity": {
-                "type": "integer"
+                "type": "number",
+                "description": "Quantity to order for this SKU."
               },
               "unit_cost": {
-                "type": "number"
+                "type": "number",
+                "description": "Optional unit cost; the server falls back to a trusted cost when omitted."
               }
             }
           }
+        },
+        "notes": {
+          "type": "string",
+          "description": "Optional free-text notes to attach to the draft PO."
+        },
+        "expected_delivery_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Optional expected delivery date in YYYY-MM-DD format."
+        },
+        "action_id": {
+          "type": "string",
+          "description": "Optional replenishment action UUID to link to the draft PO."
         }
       },
       "required": [
         "vendor_id",
-        "destination_location_id"
+        "destination_location_id",
+        "items"
       ]
+    },
+    "annotations": {
+      "title": "Create Purchase Order",
+      "readOnlyHint": false,
+      "openWorldHint": true,
+      "destructiveHint": true,
+      "idempotentHint": false
     }
   },
   {
     "name": "rr_import_purchase_orders",
-    "description": "Import open and historical purchase orders from a CSV export (Stocky / Inventory Planner migration). One row per line item, grouped by po_number; both tools' column names are recognized. Records received quantities as a snapshot only - never moves stock. Idempotent on po_number. preview defaults to true (validate without writing); pass preview=false to commit.",
+    "description": "Import open and historical purchase orders from a CSV export (the way in for a seller moving from another inventory tool). One row per line item, grouped by po_number; column names from common inventory tools' exports are recognized automatically. Records received quantities as a snapshot only - it NEVER moves stock. Idempotent on po_number (re-running the same file is safe). preview defaults to true: it validates and returns what would import without writing; pass preview=false to actually import. Returns per-PO counts, warnings, and errors.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -723,7 +1248,7 @@ const TOOLS: ToolDefinition[] = [
         },
         "preview": {
           "type": "boolean",
-          "description": "Default true. Validates and returns what would import without writing. Pass false to commit the import."
+          "description": "Default true. When true, validates and returns what would import without writing. Pass false to commit the import."
         },
         "create_missing_vendors": {
           "type": "boolean",
@@ -747,187 +1272,298 @@ const TOOLS: ToolDefinition[] = [
       "required": [
         "csv_content"
       ]
+    },
+    "annotations": {
+      "title": "Import Purchase Orders",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_update_purchase_order",
-    "description": "Update a draft or in-review purchase order (notes, expected delivery date, vendor).",
+    "description": "Update a draft or suggested PO. Allowed fields: notes, expected_delivery_date, vendor_id. Edits are recorded in the PO's revision history. Status changes are NOT supported here - use rr_send_purchase_order or rr_cancel_purchase_order. Only draft/suggested POs are editable; approved/sent/received/cancelled POs are not.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "po_id": {
           "type": "string",
-          "description": "Purchase order UUID"
+          "description": "The purchase order id or its PO number, for example REV-PO-002 (required)."
         },
         "notes": {
           "type": "string",
-          "description": "Updated notes"
+          "description": "Optional replacement notes for the PO."
         },
         "expected_delivery_date": {
           "type": "string",
-          "description": "Updated expected delivery date"
+          "format": "date",
+          "description": "Optional expected delivery date in YYYY-MM-DD format."
         },
         "vendor_id": {
           "type": "string",
-          "description": "Updated vendor ID"
+          "description": "Optional vendor UUID to reassign the PO to."
         }
       },
       "required": [
         "po_id"
       ]
+    },
+    "annotations": {
+      "title": "Update Purchase Order",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false
     }
   },
   {
     "name": "rr_add_po_note",
-    "description": "Add a note/comment to a purchase order.",
+    "description": "Add a note to a purchase order. Use for context the seller wants to attach to the PO record (e.g., 'vendor confirmed lead time').",
     "inputSchema": {
       "type": "object",
       "properties": {
         "po_id": {
           "type": "string",
-          "description": "Purchase order UUID"
+          "description": "The purchase order id or its PO number, for example REV-PO-002 (required)."
         },
         "content": {
           "type": "string",
-          "description": "Note content"
+          "description": "The note text."
         }
       },
       "required": [
         "po_id",
         "content"
       ]
+    },
+    "annotations": {
+      "title": "Add Po Note",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false
     }
   },
   {
     "name": "rr_request_approval",
-    "description": "Request human approval for a purchase order. Returns a time-limited approval URL (15 min) to share with a team member.",
+    "description": "Ask a manager to approve a draft/review PO. The request expires in 15 minutes and is approved in ReplenishRadar after signing in, not by a link. Use BEFORE rr_send_purchase_order - sending without approval will fail. Supersedes any prior pending request.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "po_id": {
           "type": "string",
-          "description": "Purchase order UUID"
+          "description": "The purchase order id or its PO number, for example REV-PO-002 (required)."
         },
         "message": {
           "type": "string",
-          "description": "Message for the approver"
+          "description": "Optional context for the approver."
         }
       },
       "required": [
         "po_id"
       ]
+    },
+    "annotations": {
+      "title": "Request Approval",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false
     }
   },
   {
     "name": "rr_send_purchase_order",
-    "description": "Mark an approved purchase order as sent. Requires prior human approval via rr_request_approval.",
+    "description": "Send an approved PO: marks it sent (status='sent', sent_at=now) and emails the supplier the PO packet at the supplier's contact on file. Will fail if status is not 'approved' - use rr_request_approval first. The response's delivery and supplier_delivery_status say what happened to the email, one of six values: pending (being sent), emailed, partial (some recipients only), queued (will send after the recipient's quiet hours), unknown (could not confirm, check with the supplier before resending) or failed. Calling it again on a sent PO sends nothing. To email an already-sent PO's supplier again, pass resend: true: a failed email, or the recipients a partial one missed, are sent again; when the supplier may already have it (emailed or unknown) nothing is sent unless confirm_possible_duplicate is also true, so check with the user first; while queued or pending a resend is refused.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "po_id": {
           "type": "string",
-          "description": "Purchase order UUID"
+          "description": "The purchase order id or its PO number, for example REV-PO-002 (required)."
         },
         "action_id": {
           "type": "string",
-          "description": "Optional replenishment action UUID to append a send event to"
+          "description": "Optional replenishment action UUID to record the send event on."
+        },
+        "resend": {
+          "type": "boolean",
+          "description": "Email the supplier again for a PO already sent (sent, confirmed, pi_received or in_transit). Does not send the PO again."
+        },
+        "confirm_possible_duplicate": {
+          "type": "boolean",
+          "description": "With resend: true, send even though the supplier may already have this order (delivery emailed, partial or unknown). Only after the user has confirmed it."
         }
       },
       "required": [
         "po_id"
       ]
+    },
+    "annotations": {
+      "title": "Send Purchase Order",
+      "readOnlyHint": false,
+      "openWorldHint": true,
+      "destructiveHint": true,
+      "idempotentHint": false
     }
   },
   {
     "name": "rr_cancel_purchase_order",
-    "description": "Cancel a purchase order. Cannot cancel POs with status cancelled, received, or closed.",
+    "description": "Cancel a PO (status='cancelled'). Cannot cancel POs already in cancelled/received/closed status.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "po_id": {
           "type": "string",
-          "description": "Purchase order UUID"
+          "description": "The purchase order id or its PO number, for example REV-PO-002 (required)."
         }
       },
       "required": [
         "po_id"
       ]
+    },
+    "annotations": {
+      "title": "Cancel Purchase Order",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_record_pi_review",
+    "description": "Record a supplier's proforma invoice (PI) on a purchase order: its number, date, total and payment terms. A sent or confirmed order moves to pi_received; one already at pi_received has its PI details updated; any other status is refused. Send only the fields the seller gave you.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "po_id": {
+          "type": "string",
+          "description": "The purchase order id or its PO number, for example REV-PO-002."
+        },
+        "pi_number": {
+          "type": "string",
+          "description": "The proforma invoice number."
+        },
+        "pi_date": {
+          "type": "string",
+          "description": "The invoice date, ISO 8601, for example 2026-10-18."
+        },
+        "pi_total": {
+          "type": "number",
+          "description": "The invoice total."
+        },
+        "pi_terms": {
+          "type": "object",
+          "description": "The payment terms as a JSON object under 4 KB, for example {\"deposit_pct\": 30, \"balance\": \"on shipment\"}."
+        }
+      },
+      "required": [
+        "po_id"
+      ]
+    },
+    "annotations": {
+      "title": "Record Pi Review",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false
     }
   },
   {
     "name": "rr_add_replenishment_action_note",
-    "description": "Add a note to a replenishment action.",
+    "description": "Add a note to a canonical replenishment action. Use this when the seller wants context attached to the action itself, not just a PO.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "action_id": {
           "type": "string",
-          "description": "Replenishment action UUID"
+          "description": "Replenishment action UUID (required)."
         },
         "note": {
           "type": "string",
-          "description": "Note content"
+          "description": "Note body (required)."
         }
       },
       "required": [
         "action_id",
         "note"
       ]
+    },
+    "annotations": {
+      "title": "Add Replenishment Action Note",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false
     }
   },
   {
     "name": "rr_dismiss_replenishment_action",
-    "description": "Dismiss a replenishment action with an optional reason.",
+    "description": "Dismiss a canonical replenishment action when the seller decides no buyer work is needed. Records an action event and removes it from active action queues.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "action_id": {
           "type": "string",
-          "description": "Replenishment action UUID"
+          "description": "Replenishment action UUID (required)."
         },
         "reason": {
           "type": "string",
-          "description": "Dismissal reason"
+          "description": "Optional dismissal reason."
         }
       },
       "required": [
         "action_id"
       ]
+    },
+    "annotations": {
+      "title": "Dismiss Replenishment Action",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false
     }
   },
   {
     "name": "rr_prepare_replenishment_action",
-    "description": "Preview a replenishment action and return its current updated_at before executing. Use the returned updated_at as expected_updated_at on execute/resolve/retry.",
+    "description": "Preview a replenishment action before acting on it: its kind, status, products, supplier and locations, and its current updated_at. Pass that updated_at as expected_updated_at to rr_execute_replenishment_action, rr_retry_replenishment_action or rr_resolve_replenishment_action. Changes nothing; refused for an action that is already finished.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "action_id": {
           "type": "string",
-          "description": "Replenishment action UUID"
+          "description": "The replenishment action id, from rr_get_replenishment_actions."
         }
       },
       "required": [
         "action_id"
       ]
+    },
+    "annotations": {
+      "title": "Prepare Replenishment Action",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_execute_replenishment_action",
-    "description": "Execute a replenishment action in draft mode: creates a draft purchase order and/or draft transfer order for the action's items. Idempotent by idempotency_key; rejects with conflict if the action changed since prepare (stale expected_updated_at) or if the same key is reused with a different payload or actor. Never auto-sends to suppliers and never commits stock.",
+    "description": "Turn a replenishment action into its draft purchase order or draft transfer, for a person to review. Nothing is sent to a supplier and no stock moves. It needs the action's updated_at as last read; if the user has not given it, read it with rr_prepare_replenishment_action.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "action_id": {
           "type": "string",
-          "description": "Replenishment action UUID"
+          "description": "The replenishment action id, from rr_get_replenishment_actions."
         },
         "idempotency_key": {
           "type": "string",
-          "description": "Caller-chosen idempotency key; replay with the same key + payload returns the original result"
+          "description": "A value you choose for this attempt. Repeating a call with the same value and the same arguments returns the first result and does nothing again."
         },
         "expected_updated_at": {
           "type": "string",
-          "description": "The action updated_at from rr_prepare_replenishment_action; execute fails if it no longer matches"
+          "description": "The action's updated_at as last read (rr_prepare_replenishment_action or rr_get_replenishment_action). The call is refused if the action changed since, so it can be read again."
         }
       },
       "required": [
@@ -935,29 +1571,36 @@ const TOOLS: ToolDefinition[] = [
         "idempotency_key",
         "expected_updated_at"
       ]
+    },
+    "annotations": {
+      "title": "Execute Replenishment Action",
+      "readOnlyHint": false,
+      "openWorldHint": true,
+      "destructiveHint": true,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_resolve_replenishment_action",
-    "description": "Resolve a replenishment action as no-action with a reason. Idempotent; requires idempotency_key and expected_updated_at and applies the same stale-state conflict contract as execute.",
+    "description": "Close a replenishment action with a reason when no purchase order or transfer is needed, for example because the stock was bought another way. Removes it from the open lists and creates nothing.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "action_id": {
           "type": "string",
-          "description": "Replenishment action UUID"
+          "description": "The replenishment action id, from rr_get_replenishment_actions."
         },
         "reason": {
           "type": "string",
-          "description": "Reason the action needs no procurement/transfer"
+          "description": "Why no purchase order or transfer is needed."
         },
         "idempotency_key": {
           "type": "string",
-          "description": "Caller-chosen idempotency key"
+          "description": "A value you choose for this attempt. Repeating a call with the same value and the same arguments returns the first result and does nothing again."
         },
         "expected_updated_at": {
           "type": "string",
-          "description": "The action updated_at the resolution was decided against"
+          "description": "The action's updated_at as last read (rr_prepare_replenishment_action or rr_get_replenishment_action). The call is refused if the action changed since, so it can be read again."
         }
       },
       "required": [
@@ -966,25 +1609,32 @@ const TOOLS: ToolDefinition[] = [
         "idempotency_key",
         "expected_updated_at"
       ]
+    },
+    "annotations": {
+      "title": "Resolve Replenishment Action",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_retry_replenishment_action",
-    "description": "Retry a blocked or failed replenishment action by re-running the draft execution path. Idempotent; requires idempotency_key and expected_updated_at and applies the same stale-state conflict contract as execute.",
+    "description": "Try again to turn a replenishment action into its draft purchase order or draft transfer after an earlier attempt was blocked or failed. Same effects as rr_execute_replenishment_action: drafts only, nothing sent and no stock moved.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "action_id": {
           "type": "string",
-          "description": "Replenishment action UUID"
+          "description": "The replenishment action id, from rr_get_replenishment_actions."
         },
         "idempotency_key": {
           "type": "string",
-          "description": "Caller-chosen idempotency key"
+          "description": "A value you choose for this attempt. Repeating a call with the same value and the same arguments returns the first result and does nothing again."
         },
         "expected_updated_at": {
           "type": "string",
-          "description": "The action updated_at the retry was decided against"
+          "description": "The action's updated_at as last read (rr_prepare_replenishment_action or rr_get_replenishment_action). The call is refused if the action changed since, so it can be read again."
         }
       },
       "required": [
@@ -992,197 +1642,197 @@ const TOOLS: ToolDefinition[] = [
         "idempotency_key",
         "expected_updated_at"
       ]
-    }
-  },
-  {
-    "name": "rr_get_document_upload_url",
-    "description": "Create a document record for a purchase order (invoice, packing slip, etc.). Requires Scale tier.",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "po_id": {
-          "type": "string",
-          "description": "Purchase order UUID"
-        },
-        "filename": {
-          "type": "string",
-          "description": "Document filename"
-        },
-        "document_type": {
-          "type": "string",
-          "description": "Document type (default: attachment)"
-        },
-        "description": {
-          "type": "string",
-          "description": "Document description"
-        }
-      },
-      "required": [
-        "po_id",
-        "filename"
-      ]
-    }
-  },
-  {
-    "name": "rr_record_pi_review",
-    "description": "Record proforma invoice details on a purchase order (PI number, date, total, terms).",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "po_id": {
-          "type": "string",
-          "description": "Purchase order UUID"
-        },
-        "pi_number": {
-          "type": "string",
-          "description": "Proforma invoice number"
-        },
-        "pi_date": {
-          "type": "string",
-          "description": "PI date (ISO 8601)"
-        },
-        "pi_total": {
-          "type": "number",
-          "description": "PI total amount"
-        },
-        "pi_terms": {
-          "type": "string",
-          "description": "Payment terms"
-        }
-      },
-      "required": [
-        "po_id"
-      ]
+    },
+    "annotations": {
+      "title": "Retry Replenishment Action",
+      "readOnlyHint": false,
+      "openWorldHint": true,
+      "destructiveHint": true,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_create_location",
-    "description": "Create a manual inventory location such as warehouse, 3PL, or inbound location.",
+    "description": "Create a manual stocking location: a warehouse, 3PL, FBA, WFS, in-transit or inbound location, with an optional address. Refused when an active location already has the name. It adds the location only; set its stock with rr_set_stock_at_location.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "name": {
           "type": "string",
-          "description": "Location name"
+          "description": "The location's name, unique among active locations."
         },
         "type": {
           "type": "string",
           "enum": [
+            "fba",
             "warehouse",
             "3pl",
-            "fba",
             "wfs",
             "in_transit",
             "inbound"
           ],
-          "description": "Location type"
-        },
-        "address_line1": {
-          "type": "string",
-          "description": "Street address"
-        },
-        "city": {
-          "type": "string",
-          "description": "City"
-        },
-        "state": {
-          "type": "string",
-          "description": "State or province"
-        },
-        "postal_code": {
-          "type": "string",
-          "description": "Postal code"
-        },
-        "country": {
-          "type": "string",
-          "description": "Country"
+          "description": "The kind of location."
         },
         "is_default": {
           "type": "boolean",
-          "description": "Whether this should be the default manual location"
+          "description": "Make this the default manual location. Default false."
+        },
+        "address_line1": {
+          "type": "string",
+          "description": "Street address."
+        },
+        "city": {
+          "type": "string",
+          "description": "City."
+        },
+        "state": {
+          "type": "string",
+          "description": "State or province."
+        },
+        "postal_code": {
+          "type": "string",
+          "description": "Postal code."
+        },
+        "country": {
+          "type": "string",
+          "description": "Country."
         }
       },
       "required": [
         "name",
         "type"
       ]
+    },
+    "annotations": {
+      "title": "Create Location",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false
     }
   },
   {
     "name": "rr_set_stock_at_location",
-    "description": "Set stock quantity for a SKU at a manual location.",
+    "description": "Set the on-hand quantity of one SKU at one manual location to an absolute number, replacing the stored count. Read the current position first and confirm the number with the user: a sale recorded since the last count is overwritten. System and inactive locations are refused, and so is stock a live collection holds.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "location_id": {
           "type": "string",
-          "description": "Manual location UUID"
+          "description": "The manual location's id. Give this or location_name."
         },
         "location_name": {
           "type": "string",
-          "description": "Manual location name, used if location_id is omitted"
+          "description": "The manual location's name, used when location_id is not given."
         },
         "sku": {
           "type": "string",
-          "description": "Canonical SKU"
+          "description": "The product's SKU."
         },
         "quantity": {
           "type": "integer",
-          "description": "New on-hand quantity"
+          "minimum": 0,
+          "description": "The new on-hand quantity, 0 or more."
         }
       },
       "required": [
         "sku",
         "quantity"
       ]
+    },
+    "annotations": {
+      "title": "Set Stock At Location",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false
     }
   },
   {
-    "name": "rr_get_agent_context",
-    "description": "Get one agent context entry by namespace and key. Expired entries are omitted. The namespace must be granted to this API key by a human admin.",
+    "name": "rr_acknowledge_alert",
+    "description": "Acknowledge an open alert. Sets status='acknowledged', stamps acknowledged_at + acknowledged_by, and writes an alert_audit row. Use when the seller has read and accepted an alert.",
     "inputSchema": {
       "type": "object",
       "properties": {
-        "namespace": {
+        "alert_id": {
           "type": "string",
-          "description": "Allowlisted context namespace (for example supplier_rules)"
+          "description": "Alert UUID (required)."
         },
-        "key": {
+        "note": {
           "type": "string",
-          "description": "Entry key within the namespace (max 200 chars)"
+          "description": "Optional note to store with the acknowledgement."
         }
       },
       "required": [
-        "namespace",
-        "key"
+        "alert_id"
       ]
+    },
+    "annotations": {
+      "title": "Acknowledge Alert",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_trigger_sync",
+    "description": "Trigger an inventory sync for a connected Shopify or Amazon store. Skipped if a sync ran in the last 5 minutes for this connector type. Returns {status: 'queued'|'skipped', sync_event_id, requested_store_id, blocking_sync_event_id, message}. Pass sync_event_id to rr_get_sync_status to follow the request; sync_run_id is not known at queue time and is always null here. skipped: 'fba_inventory_not_applicable' is permanent for that store (Amazon gives it no FBA inventory access); do not retry it.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "connector_type": {
+          "type": "string",
+          "enum": [
+            "shopify",
+            "amazon"
+          ],
+          "description": "Which platform to sync (required)."
+        },
+        "store_id": {
+          "type": "string",
+          "description": "Optional store id. If omitted, picks the first connected store of the given platform."
+        }
+      },
+      "required": [
+        "connector_type"
+      ]
+    },
+    "annotations": {
+      "title": "Trigger Sync",
+      "readOnlyHint": false,
+      "openWorldHint": true,
+      "destructiveHint": true,
+      "idempotentHint": false
     }
   },
   {
     "name": "rr_set_agent_context",
-    "description": "Store a bounded JSON object under a namespace and key. The value must be a JSON object (max 16 KiB), must not contain secrets or raw PII, and ttl_seconds is optional and capped at 90 days. The namespace must be granted to this key.",
+    "description": "Save a small JSON object under a namespace and key, for an agent to read back later. Never store secrets or personal data in it. The namespace must have been granted to this API key.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "namespace": {
           "type": "string",
-          "description": "Allowlisted context namespace"
+          "description": "A context namespace this key has been granted, for example supplier_rules."
         },
         "key": {
           "type": "string",
-          "description": "Entry key within the namespace (max 200 chars)"
+          "description": "The entry's key within the namespace, up to 200 characters."
         },
         "value": {
           "type": "object",
-          "description": "JSON object value (max 16 KiB, no secrets or PII)"
+          "description": "The JSON object to save, up to 16 KiB."
         },
         "scope_ref": {
           "type": "string",
-          "description": "Optional descriptive scope label (max 200 chars, non-secret)"
+          "description": "Optional label for what the entry is about, up to 200 characters. Not secret."
         },
         "ttl_seconds": {
           "type": "integer",
-          "description": "Optional expiry in seconds (max 7776000 = 90 days)"
+          "minimum": 1,
+          "maximum": 7776000,
+          "description": "Optional lifetime in seconds, up to 90 days."
         }
       },
       "required": [
@@ -1190,51 +1840,41 @@ const TOOLS: ToolDefinition[] = [
         "key",
         "value"
       ]
-    }
-  },
-  {
-    "name": "rr_list_agent_context",
-    "description": "List live agent context entries for a single namespace. The namespace is required and the limit is bounded (max 200). This tool never lists across namespaces.",
-    "inputSchema": {
-      "type": "object",
-      "properties": {
-        "namespace": {
-          "type": "string",
-          "description": "Allowlisted context namespace (required)"
-        },
-        "limit": {
-          "type": "integer",
-          "description": "Max results (default 50, max 200)"
-        },
-        "key_prefix": {
-          "type": "string",
-          "description": "Optional key prefix filter"
-        }
-      },
-      "required": [
-        "namespace"
-      ]
+    },
+    "annotations": {
+      "title": "Set Agent Context",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true
     }
   },
   {
     "name": "rr_delete_agent_context",
-    "description": "Delete one agent context entry by namespace and key. Records actor provenance. The namespace must be granted to this key.",
+    "description": "Delete one saved agent context entry by namespace and key. The namespace must have been granted to this API key.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "namespace": {
           "type": "string",
-          "description": "Allowlisted context namespace"
+          "description": "A context namespace this key has been granted, for example supplier_rules."
         },
         "key": {
           "type": "string",
-          "description": "Entry key within the namespace"
+          "description": "The entry's key within the namespace, up to 200 characters."
         }
       },
       "required": [
         "namespace",
         "key"
       ]
+    },
+    "annotations": {
+      "title": "Delete Agent Context",
+      "readOnlyHint": false,
+      "openWorldHint": false,
+      "destructiveHint": true,
+      "idempotentHint": true
     }
   }
 ];
@@ -1263,7 +1903,7 @@ async function callApi(toolName: string, input: Record<string, unknown>): Promis
 
 async function main() {
   const server = new Server(
-    { name: 'replenishradar', version: '1.1.0' },
+    { name: 'replenishradar', version: '1.2.0' },
     { capabilities: { tools: {} } },
   );
 
