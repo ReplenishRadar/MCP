@@ -9,9 +9,9 @@ A short daily read of the store: what is about to run out, what alerts are open,
 
 ## Steps
 
-1. Call `rr_get_sku_health` for the catalog snapshot: how many products sit at each risk level and how many alerts of each type are active.
-2. Call `rr_get_stockout_risk` with `risk_level` set to `critical`, then `high`. Page through each with `cursor` while `has_more` is true.
-3. Call `rr_get_alerts` with `status` set to `active`. Use `severity` `critical` first if the list is long.
+1. Call `rr_get_inventory_health` for the catalog snapshot: how many products sit at each risk level and how many alerts of each type are active.
+2. Call `rr_list_stockout_risks` with `risk_level` set to `critical`, then `high`. Page through each with `cursor` while `has_more` is true.
+3. Call `rr_list_alerts` with `status` set to `active`. Use `severity` `critical` first if the list is long.
 4. Call `rr_get_data_freshness`. If anything is stale, the risk figures may be out of date; say which.
 
 ## The answer
