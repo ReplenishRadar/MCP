@@ -38,7 +38,7 @@ if (!API_KEY) {
 
 const TOOLS: ToolDefinition[] = [
   {
-    "name": "rr_get_suggested_purchase_orders",
+    "name": "rr_list_suggested_purchase_orders",
     "description": "Get AI-suggested purchase orders based on stockout risk, demand, and supplier reliability.",
     "inputSchema": {
       "type": "object",
@@ -70,7 +70,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Suggested Purchase Orders",
+      "title": "Suggested purchase orders",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -115,7 +115,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "List Purchase Orders",
+      "title": "Purchase orders",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -149,7 +149,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Get Purchase Order",
+      "title": "Purchase order details",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -157,7 +157,7 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_get_po_pdf",
+    "name": "rr_get_purchase_order_pdf",
     "description": "Find where to open a purchase order as a PDF. Returns the PO number and the address in ReplenishRadar that renders the PDF, not the file itself.",
     "inputSchema": {
       "type": "object",
@@ -172,7 +172,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Get Po Pdf",
+      "title": "Purchase order PDF link",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -180,7 +180,7 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_get_po_documents",
+    "name": "rr_list_purchase_order_documents",
     "description": "List the documents attached to a purchase order, newest first.",
     "inputSchema": {
       "type": "object",
@@ -206,7 +206,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Get Po Documents",
+      "title": "Purchase order documents",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -214,7 +214,7 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_get_po_notes",
+    "name": "rr_list_purchase_order_notes",
     "description": "Get all notes for a purchase order, most recent first.",
     "inputSchema": {
       "type": "object",
@@ -240,7 +240,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Get Po Notes",
+      "title": "Purchase order notes",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -248,8 +248,8 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_get_replenishment_actions",
-    "description": "List canonical replenishment actions for buyer work. Prefer this over suggested purchase orders or alerts when deciding what action the user should take next.",
+    "name": "rr_list_recommendations",
+    "description": "List recommendations: the buying and transfer work ReplenishRadar has prepared that is still waiting, as supplier orders, transfers between locations, or both.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -296,7 +296,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Replenishment Actions",
+      "title": "Recommendations",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -304,14 +304,14 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_get_replenishment_action",
-    "description": "Get one replenishment action with child item provenance, snapshots, linked execution records, and event history. The products come in pages: pass next_cursor as cursor until has_more is false; the action's own fields are on every page. The action carries its newest events, oldest first, up to 100 (fewer when they are long); events_total is how many it has and events_truncated is true when older ones were left out, which are on the action's page in the app. Long lists of SKUs or locations on the action are capped at 100 with a <name>_total beside them; the product pages are the complete list.",
+    "name": "rr_get_recommendation",
+    "description": "Get one recommendation with child item provenance, snapshots, linked execution records, and event history. The products come in pages: pass next_cursor as cursor until has_more is false; the action's own fields are on every page. The action carries its newest events, oldest first, up to 100 (fewer when they are long); events_total is how many it has and events_truncated is true when older ones were left out, which are on the action's page in the app. Long lists of SKUs or locations on the action are capped at 100 with a <name>_total beside them; the product pages are the complete list.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "action_id": {
           "type": "string",
-          "description": "Replenishment action ID"
+          "description": "Recommendation ID"
         },
         "limit": {
           "type": "integer",
@@ -330,7 +330,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Get Replenishment Action",
+      "title": "Recommendation details",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -338,8 +338,8 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_get_transfer_exclusions",
-    "description": "Why products were, or were not, moved between the seller's own locations on the last transfer run. Pass a sku for one product's answer; omit it for the whole population with counts by reason. Use this when a seller asks why something was not transferred or restocked from another location, rather than inferring it from an empty transfer-suggestions list.",
+    "name": "rr_list_transfer_decisions",
+    "description": "Why products were, or were not, moved between the seller's own locations on the last transfer run. Pass a sku for one product's answer; omit it for the whole population with counts by reason. It answers why something was not transferred or restocked from another location, which an empty transfer-suggestions list does not say.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -362,7 +362,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Transfer Exclusions",
+      "title": "Why products were not transferred",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -370,7 +370,7 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_get_stockout_risk",
+    "name": "rr_list_stockout_risks",
     "description": "Get stockout risk assessment for SKUs. Returns risk levels, days to stockout, velocity, and planned_order: the quantity the PO planner suggests ordering (use planned_order.qty, not suggested_qty). A row with planned_order null and a name_review_hold has an order waiting on the supplier name review, which is not the same as no order suggested. Only positions the planner could evaluate are listed: products without enough sales history and products excluded from planning are left out, so absence from this list, or an empty list, is not evidence that stock is healthy.",
     "inputSchema": {
       "type": "object",
@@ -402,7 +402,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Stockout Risk",
+      "title": "Stockout risk",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -438,7 +438,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Inventory Position",
+      "title": "Inventory position",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -482,7 +482,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Demand Forecast",
+      "title": "Demand forecast",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -490,7 +490,7 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_list_items",
+    "name": "rr_list_products",
     "description": "List inventory items with optional filters. For an exact SKU identity question, provide the exact value in search and set include_listing_identity=true to resolve Amazon seller SKUs and return source listing identifiers such as ASIN and FNSKU.",
     "inputSchema": {
       "type": "object",
@@ -531,7 +531,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "List Items",
+      "title": "Products",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -563,7 +563,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "List Suppliers",
+      "title": "Suppliers",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -571,8 +571,8 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_get_sales_history",
-    "description": "Get sales history rows, newest first, over a time period. total is the exact number of rows in the window; count is the rows in this page. When has_more is true, pass next_cursor as cursor to get the next page. Answer totals and rankings from total or rr_get_top_sellers rather than from the rows, and do not conclude anything about the whole window from a partial walk.",
+    "name": "rr_list_sales_history",
+    "description": "Get sales history rows, newest first, over a time period. total is the exact number of rows in the window; count is the rows in this page. When has_more is true, pass next_cursor as cursor to get the next page. Totals and rankings come from total or rr_list_top_sellers; a partial walk of the rows says nothing about the whole window.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -615,7 +615,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Sales History",
+      "title": "Sales history",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -623,7 +623,7 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_get_top_sellers",
+    "name": "rr_list_top_sellers",
     "description": "Get top-selling products ranked by units sold over the whole window, one row per product however many SKU labels its sales carry. total_skus is how many products have sales rows in the window (the name is historical); truncated_to_top_n is true when that is more than the page returned (this ranking has no next page).",
     "inputSchema": {
       "type": "object",
@@ -634,7 +634,7 @@ const TOOLS: ToolDefinition[] = [
         },
         "months": {
           "type": "integer",
-          "description": "Rank over this many calendar months instead of days (max 36), on net demand units. Use for a window longer than 90 days."
+          "description": "Rank over this many calendar months instead of days (max 36), on net demand units, for a window longer than 90 days."
         },
         "limit": {
           "type": "integer",
@@ -648,7 +648,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Top Sellers",
+      "title": "Top sellers",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -656,7 +656,7 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_get_slow_movers",
+    "name": "rr_list_slow_movers",
     "description": "Overstock / dead-stock / slow movers: SKUs you are HOLDING (on-hand > 0) that aren't selling - capital tied up. Returns on_hand, units sold in the window, and a dead_stock flag: held with no sale in the last 12 months, whatever the window (null, with dead_stock_message saying why, while the sales history is too short to decide). dead_stock_summary is the seller's total dead-stock count across every store, whatever store_id asks for, and its value at cost when costs may be shown. Inventory-first, so never-sold dead stock is surfaced too. total is how many held SKUs there are; has_more is true when that is more than the page returned.",
     "inputSchema": {
       "type": "object",
@@ -684,7 +684,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Slow Movers",
+      "title": "Slow movers and overstock",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -705,7 +705,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Inventory Value",
+      "title": "Inventory value",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -713,15 +713,15 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_get_sku_health",
-    "description": "Org-wide SKU health snapshot: stockout-risk counts by level and active alert counts by type.",
+    "name": "rr_get_inventory_health",
+    "description": "Store-wide inventory health summary: stockout-risk counts by level and active alert counts by type.",
     "inputSchema": {
       "type": "object",
       "properties": {},
       "required": []
     },
     "annotations": {
-      "title": "Get Sku Health",
+      "title": "Inventory health summary",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -729,7 +729,7 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_get_lost_sales",
+    "name": "rr_list_lost_sales",
     "description": "Get estimated lost sales due to stockouts.",
     "inputSchema": {
       "type": "object",
@@ -753,7 +753,68 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Lost Sales",
+      "title": "Lost sales",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_get_product_expiry_risk",
+    "description": "Expiry risk for one product marked as expiring: at each location holding it, the recorded lots estimated to be still on hand (lot code, expiry date, and the date the lot becomes unusable), whether each is expected to sell before that date, and the units and cost at risk. These are estimates: Amazon does not report which lot it sold, so the lots on hand are inferred from arrival order (oldest first at Amazon FBA, earliest expiry first at the seller's own locations) and projected against the product's sales rate. A lot becomes unusable a set number of days before it expires: Amazon's removal window at FBA, the product's days-to-consume elsewhere. A location with status no_demand has no sales rate to project, so its lots are not scored. At Amazon FBA each position also carries old_stock_bound (the most older stock that can still be there, from Amazon's own count) and next_arrival: when the next shipment should arrive so the stock there is nearly sold through and the product stays in stock (status window with earliest and latest dates), or, when both cannot hold, the latest date that keeps it in stock and the units likely still there then (overlap), or late. The latest date is never later than ReplenishRadar's stock-out forecast allows (past its 30 days it is continued at the current rate, and says so). A dated next_arrival carries ship_by: when the shipment must leave to arrive in time, the arrival dates less the store's transit to Amazon (learned from its own received shipments, or its FBA transit setting); passed with arrives_if_sent_today when that date has gone; status unknown when ReplenishRadar has no transit it can stand behind, never a guessed default. A product not marked as expiring returns requires_expiration false and no positions. Cost fields are null unless the key may read cost data. For the lots at risk across the whole catalog, use rr_list_expiring_lots.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "item_id": {
+          "type": "string",
+          "description": "The product's item id. Give this or sku; item_id wins if both are given."
+        },
+        "sku": {
+          "type": "string",
+          "description": "The product's SKU, used when item_id is not given."
+        }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Expiry risk for a product",
+      "readOnlyHint": true,
+      "openWorldHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true
+    }
+  },
+  {
+    "name": "rr_list_expiring_lots",
+    "description": "List the lots across the whole catalog that are estimated to be left unsold when they become unusable (status at_risk), or that have already reached that date with units left (past_cutoff), earliest unusable date first, at Amazon FBA and at the seller's own locations. Each row names the product, the location, the lot code, the expiry and unusable dates, the units remaining and the units at risk. These are estimates: Amazon does not report which lot it sold, so the lots on hand are inferred from arrival order and projected against each product's sales rate. An empty list does not mean nothing will expire. summary counts, across the whole catalog whatever status asks for, what the list cannot show: positions_without_demand and units_without_demand (lots at a location with no sales rate to project), units_with_no_lot (stock with no lot on record), units_without_expiry_date (lots recorded with no expiry date), positions_at_disconnected_stores, positions_unreadable, and positions_arrival_overlap (Amazon locations whose next shipment must arrive before the stock there is nearly sold through to stay in stock, or is already late; each row carries its location's next_arrival with its ship_by dates), positions_ship_by_unknown (Amazon locations with an arrival date and no ship-by date, because the store's transit to Amazon is not known); products_with_expiring_stock is how many products marked as expiring have stock on hand at all. Cost fields are null unless the key may read cost data. For every lot of one product, including those on track to sell, use rr_get_product_expiry_risk.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "at_risk",
+            "past_cutoff"
+          ],
+          "description": "Only lots with this status. Omit for both."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 100,
+          "description": "Rows per page (default 100, max 500)."
+        },
+        "cursor": {
+          "type": "string",
+          "description": "next_cursor from the previous page. Pass it with the same other inputs until has_more is false."
+        }
+      },
+      "required": []
+    },
+    "annotations": {
+      "title": "Lots at risk of expiring",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -797,7 +858,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Sync Status",
+      "title": "Sync status",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -806,7 +867,7 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     "name": "rr_get_store_health",
-    "description": "Diagnose each connected store's health. Returns per-store connection status, hours since last sync, and a diagnosis enum (disconnected / error / pending_setup / sync_paused / stale / healthy), plus a summary with primary_diagnosis. Call FIRST for any sync-failure, missing-inventory, or 'why isn't X working' question - a disconnected store is upstream of every sync error it has.",
+    "description": "Diagnose each connected store's health. Returns per-store connection status, hours since last sync, and a diagnosis enum (disconnected / error / pending_setup / sync_paused / stale / healthy), plus a summary with primary_diagnosis. It answers sync-failure, missing-inventory and 'why isn't X working' questions at their source: a disconnected store is upstream of every sync error it has.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -825,7 +886,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Store Health",
+      "title": "Store connection health",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -834,14 +895,14 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     "name": "rr_get_data_freshness",
-    "description": "Get per-dimension freshness status (sync, positions, demand, risk, recommendations) with staleness thresholds and a primary_concern summary. Use it when the user asks whether the numbers are up to date, or to explain a figure that looks stale.",
+    "description": "Get per-dimension freshness status (sync, positions, demand, risk, recommendations) with staleness thresholds and a primary_concern summary. It answers whether the numbers are up to date and explains a figure that looks stale.",
     "inputSchema": {
       "type": "object",
       "properties": {},
       "required": []
     },
     "annotations": {
-      "title": "Get Data Freshness",
+      "title": "Data freshness",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -850,14 +911,14 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     "name": "rr_get_setup_status",
-    "description": "Check onboarding milestones and compute the next setup step. Returns counts (connected_stores, suppliers, items), activation milestones, and a next_step enum (connect_store, wait_for_sync, add_supplier, run_first_forecast, review_first_suggested_po, done). Call for onboarding questions or before suggesting reorder points / deeper features - don't advise a number when next_step is still connect_store.",
+    "description": "Check onboarding milestones and compute the next setup step. Returns counts (connected_stores, suppliers, items), activation milestones, and a next_step enum (connect_store, wait_for_sync, add_supplier, run_first_forecast, review_first_suggested_po, done). It answers onboarding questions; next_step connect_store means no store is connected now, so the store's figures are not being refreshed and may not exist yet.",
     "inputSchema": {
       "type": "object",
       "properties": {},
       "required": []
     },
     "annotations": {
-      "title": "Get Setup Status",
+      "title": "Setup status",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -866,7 +927,7 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     "name": "rr_get_recent_activity",
-    "description": "Summarize the last N days of org activity (default 7, max 30). Returns counts only - alerts created/resolved, POs created/received, sync runs total/failed, and a one-word headline (sync_health_degraded / alert_storm / receiving_active / normal / quiet_week). No monetary fields. Use for 'what should I focus on today?' or 'what happened this week?' - one call replaces a fan-out of five.",
+    "description": "Summarize the last N days of org activity (default 7, max 30). Returns counts only - alerts created/resolved, POs created/received, sync runs total/failed, and a one-word headline (sync_health_degraded / alert_storm / receiving_active / normal / quiet_week). No monetary fields. It answers 'what should I focus on today?' and 'what happened this week?' in one call.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -878,7 +939,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Recent Activity",
+      "title": "Recent activity",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -886,7 +947,7 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_get_alerts",
+    "name": "rr_list_alerts",
     "description": "Get active alerts (stockout warnings, sync failures, anomalies).",
     "inputSchema": {
       "type": "object",
@@ -936,7 +997,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Get Alerts",
+      "title": "Alerts",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -944,8 +1005,8 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_get_agent_context",
-    "description": "Read one saved agent context entry by namespace and key. Expired entries are not returned. The namespace must have been granted to this API key by an admin.",
+    "name": "rr_get_memory_entry",
+    "description": "Read one saved memory entry by namespace and key. Expired entries are not returned. The namespace must have been granted to this API key by an admin.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -964,7 +1025,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Get Agent Context",
+      "title": "Saved memory entry",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -972,8 +1033,8 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_list_agent_context",
-    "description": "List the entries stored under an agent context namespace, most recently updated first.",
+    "name": "rr_list_memory_entries",
+    "description": "List the entries stored under a memory namespace, most recently updated first.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1002,7 +1063,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "List Agent Context",
+      "title": "Saved memory entries",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -1010,8 +1071,8 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "search_knowledge",
-    "description": "Search the ReplenishRadar knowledge base for product features, best practices, and inventory management concepts. Use for questions that aren't answered by the seller's live data.",
+    "name": "rr_search_knowledge",
+    "description": "Search the ReplenishRadar knowledge base for product features, best practices, and inventory management concepts: the answers the seller's live data does not hold.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1029,7 +1090,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Search Knowledge",
+      "title": "Search ReplenishRadar help",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -1112,7 +1173,7 @@ const TOOLS: ToolDefinition[] = [
       "required": []
     },
     "annotations": {
-      "title": "Evaluate Fit",
+      "title": "Check whether ReplenishRadar fits",
       "readOnlyHint": false,
       "openWorldHint": true,
       "destructiveHint": false,
@@ -1121,7 +1182,7 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     "name": "rr_submit_feedback",
-    "description": "Send feedback to the ReplenishRadar team on the user's behalf. Call it only after the user has said yes to your question \"Want me to pass this to the product team?\" in this conversation. Describe what the user wanted and what happened, in your own words, with no names, contact details, credentials, or store data beyond what the report needs. After it returns success, tell the user what you sent. Sending the same message twice returns the first report and files no second one.",
+    "description": "Sends feedback the user has agreed to pass on to the ReplenishRadar product team, on the user's behalf. The report says what the user wanted and what happened, with no names, contact details, credentials, or store data beyond what the report needs. Sending the same message twice returns the first report and files no second one.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1166,7 +1227,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Submit Feedback",
+      "title": "Send feedback to ReplenishRadar",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -1175,7 +1236,7 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     "name": "rr_create_purchase_order",
-    "description": "Create a draft purchase order for a vendor. Status is ALWAYS 'draft' - agents cannot create approved/sent POs directly. Use rr_request_approval to request approval; the PO must be approved before it can be sent. Returns the new PO + items_added count.",
+    "description": "Create a draft purchase order for a supplier. The order is always a draft: an agent cannot create an approved or sent order. Approval is requested with rr_request_purchase_order_approval, and an order must be approved before it can be sent. Given action_id, the new order is linked to that recommendation unless it is already linked to an order that is not cancelled or dismissed. Returns the new order and its items_added count.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1219,7 +1280,7 @@ const TOOLS: ToolDefinition[] = [
         },
         "action_id": {
           "type": "string",
-          "description": "Optional replenishment action UUID to link to the draft PO."
+          "description": "Optional recommendation UUID to link to the draft PO."
         }
       },
       "required": [
@@ -1229,10 +1290,10 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Create Purchase Order",
+      "title": "Create draft purchase order",
       "readOnlyHint": false,
       "openWorldHint": true,
-      "destructiveHint": true,
+      "destructiveHint": false,
       "idempotentHint": false
     }
   },
@@ -1274,7 +1335,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Import Purchase Orders",
+      "title": "Import purchase orders from CSV",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -1310,7 +1371,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Update Purchase Order",
+      "title": "Update draft purchase order",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": true,
@@ -1318,8 +1379,8 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_add_po_note",
-    "description": "Add a note to a purchase order. Use for context the seller wants to attach to the PO record (e.g., 'vendor confirmed lead time').",
+    "name": "rr_add_purchase_order_note",
+    "description": "Add a note to a purchase order: context the seller wants kept on the order record (e.g., 'supplier confirmed lead time').",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1338,7 +1399,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Add Po Note",
+      "title": "Add purchase order note",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -1346,7 +1407,7 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_request_approval",
+    "name": "rr_request_purchase_order_approval",
     "description": "Ask a manager to approve a draft/review PO. The request expires in 15 minutes and is approved in ReplenishRadar after signing in, not by a link. Use BEFORE rr_send_purchase_order - sending without approval will fail. Supersedes any prior pending request.",
     "inputSchema": {
       "type": "object",
@@ -1365,7 +1426,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Request Approval",
+      "title": "Request purchase order approval",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": true,
@@ -1374,7 +1435,7 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     "name": "rr_send_purchase_order",
-    "description": "Send an approved PO: marks it sent (status='sent', sent_at=now) and emails the supplier the PO packet at the supplier's contact on file. Will fail if status is not 'approved' - use rr_request_approval first. The response's delivery and supplier_delivery_status say what happened to the email, one of six values: pending (being sent), emailed, partial (some recipients only), queued (will send after the recipient's quiet hours), unknown (could not confirm, check with the supplier before resending) or failed. Calling it again on a sent PO sends nothing. To email an already-sent PO's supplier again, pass resend: true: a failed email, or the recipients a partial one missed, are sent again; when the supplier may already have it (emailed or unknown) nothing is sent unless confirm_possible_duplicate is also true, so check with the user first; while queued or pending a resend is refused.",
+    "description": "Send an approved PO: marks it sent (status='sent', sent_at=now) and emails the supplier the PO packet at the supplier's contact on file. Will fail if status is not 'approved' - use rr_request_purchase_order_approval first. The response's delivery and supplier_delivery_status say what happened to the email, one of six values: pending (being sent), emailed, partial (some recipients only), queued (will send after the recipient's quiet hours), unknown (could not confirm, check with the supplier before resending) or failed. Calling it again on a sent PO sends nothing. To email an already-sent PO's supplier again, pass resend: true: a failed email, or the recipients a partial one missed, are sent again; when the supplier may already have it (emailed or unknown) nothing is sent unless confirm_possible_duplicate is also true, so check with the user first; while queued or pending a resend is refused.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1384,7 +1445,7 @@ const TOOLS: ToolDefinition[] = [
         },
         "action_id": {
           "type": "string",
-          "description": "Optional replenishment action UUID to record the send event on."
+          "description": "Optional recommendation UUID to record the send event on."
         },
         "resend": {
           "type": "boolean",
@@ -1400,7 +1461,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Send Purchase Order",
+      "title": "Send purchase order to supplier",
       "readOnlyHint": false,
       "openWorldHint": true,
       "destructiveHint": true,
@@ -1423,7 +1484,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Cancel Purchase Order",
+      "title": "Cancel purchase order",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": true,
@@ -1431,7 +1492,7 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_record_pi_review",
+    "name": "rr_record_proforma_invoice",
     "description": "Record a supplier's proforma invoice (PI) on a purchase order: its number, date, total and payment terms. A sent or confirmed order moves to pi_received; one already at pi_received has its PI details updated; any other status is refused. Send only the fields the seller gave you.",
     "inputSchema": {
       "type": "object",
@@ -1462,7 +1523,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Record Pi Review",
+      "title": "Record proforma invoice",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": true,
@@ -1470,14 +1531,14 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_add_replenishment_action_note",
-    "description": "Add a note to a canonical replenishment action. Use this when the seller wants context attached to the action itself, not just a PO.",
+    "name": "rr_add_recommendation_note",
+    "description": "Add a note to a recommendation: context the seller wants kept on the recommendation itself rather than on a purchase order.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "action_id": {
           "type": "string",
-          "description": "Replenishment action UUID (required)."
+          "description": "Recommendation id (required)."
         },
         "note": {
           "type": "string",
@@ -1490,7 +1551,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Add Replenishment Action Note",
+      "title": "Add recommendation note",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -1498,14 +1559,14 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_dismiss_replenishment_action",
-    "description": "Dismiss a canonical replenishment action when the seller decides no buyer work is needed. Records an action event and removes it from active action queues.",
+    "name": "rr_dismiss_recommendation",
+    "description": "Dismiss a recommendation when the seller decides no buyer work is needed. Records an action event and removes it from active action queues.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "action_id": {
           "type": "string",
-          "description": "Replenishment action UUID (required)."
+          "description": "Recommendation id (required)."
         },
         "reason": {
           "type": "string",
@@ -1517,7 +1578,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Dismiss Replenishment Action",
+      "title": "Dismiss recommendation",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": true,
@@ -1525,14 +1586,14 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_prepare_replenishment_action",
-    "description": "Preview a replenishment action before acting on it: its kind, status, products, supplier and locations, and its current updated_at. Pass that updated_at as expected_updated_at to rr_execute_replenishment_action, rr_retry_replenishment_action or rr_resolve_replenishment_action. Changes nothing; refused for an action that is already finished.",
+    "name": "rr_preview_recommendation",
+    "description": "Preview a recommendation before acting on it: its kind, status, products, supplier and locations, and its current updated_at. Pass that updated_at as expected_updated_at to rr_create_draft_from_recommendation, rr_retry_recommendation_draft or rr_close_recommendation. Changes nothing; refused for an action that is already finished.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "action_id": {
           "type": "string",
-          "description": "The replenishment action id, from rr_get_replenishment_actions."
+          "description": "The recommendation id, from rr_list_recommendations."
         }
       },
       "required": [
@@ -1540,7 +1601,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Prepare Replenishment Action",
+      "title": "Preview recommendation",
       "readOnlyHint": true,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -1548,14 +1609,14 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_execute_replenishment_action",
-    "description": "Turn a replenishment action into its draft purchase order or draft transfer, for a person to review. Nothing is sent to a supplier and no stock moves. It needs the action's updated_at as last read; if the user has not given it, read it with rr_prepare_replenishment_action.",
+    "name": "rr_create_draft_from_recommendation",
+    "description": "Turn a recommendation into its draft purchase order or draft transfer, for a person to review. Nothing is sent to a supplier and no stock moves. It needs the action's updated_at as last read; if the user has not given it, read it with rr_preview_recommendation.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "action_id": {
           "type": "string",
-          "description": "The replenishment action id, from rr_get_replenishment_actions."
+          "description": "The recommendation id, from rr_list_recommendations."
         },
         "idempotency_key": {
           "type": "string",
@@ -1563,7 +1624,7 @@ const TOOLS: ToolDefinition[] = [
         },
         "expected_updated_at": {
           "type": "string",
-          "description": "The action's updated_at as last read (rr_prepare_replenishment_action or rr_get_replenishment_action). The call is refused if the action changed since, so it can be read again."
+          "description": "The action's updated_at as last read (rr_preview_recommendation or rr_get_recommendation). The call is refused if the action changed since, so it can be read again."
         }
       },
       "required": [
@@ -1573,7 +1634,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Execute Replenishment Action",
+      "title": "Create draft from recommendation",
       "readOnlyHint": false,
       "openWorldHint": true,
       "destructiveHint": true,
@@ -1581,14 +1642,14 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_resolve_replenishment_action",
-    "description": "Close a replenishment action with a reason when no purchase order or transfer is needed, for example because the stock was bought another way. Removes it from the open lists and creates nothing.",
+    "name": "rr_close_recommendation",
+    "description": "Close a recommendation with a reason when no purchase order or transfer is needed, for example because the stock was bought another way. Removes it from the open lists and creates nothing.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "action_id": {
           "type": "string",
-          "description": "The replenishment action id, from rr_get_replenishment_actions."
+          "description": "The recommendation id, from rr_list_recommendations."
         },
         "reason": {
           "type": "string",
@@ -1600,7 +1661,7 @@ const TOOLS: ToolDefinition[] = [
         },
         "expected_updated_at": {
           "type": "string",
-          "description": "The action's updated_at as last read (rr_prepare_replenishment_action or rr_get_replenishment_action). The call is refused if the action changed since, so it can be read again."
+          "description": "The action's updated_at as last read (rr_preview_recommendation or rr_get_recommendation). The call is refused if the action changed since, so it can be read again."
         }
       },
       "required": [
@@ -1611,7 +1672,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Resolve Replenishment Action",
+      "title": "Close recommendation",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": true,
@@ -1619,14 +1680,14 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_retry_replenishment_action",
-    "description": "Try again to turn a replenishment action into its draft purchase order or draft transfer after an earlier attempt was blocked or failed. Same effects as rr_execute_replenishment_action: drafts only, nothing sent and no stock moved.",
+    "name": "rr_retry_recommendation_draft",
+    "description": "Try again to turn a recommendation into its draft purchase order or draft transfer after an earlier attempt was blocked or failed. Same effects as rr_create_draft_from_recommendation: drafts only, nothing sent and no stock moved.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "action_id": {
           "type": "string",
-          "description": "The replenishment action id, from rr_get_replenishment_actions."
+          "description": "The recommendation id, from rr_list_recommendations."
         },
         "idempotency_key": {
           "type": "string",
@@ -1634,7 +1695,7 @@ const TOOLS: ToolDefinition[] = [
         },
         "expected_updated_at": {
           "type": "string",
-          "description": "The action's updated_at as last read (rr_prepare_replenishment_action or rr_get_replenishment_action). The call is refused if the action changed since, so it can be read again."
+          "description": "The action's updated_at as last read (rr_preview_recommendation or rr_get_recommendation). The call is refused if the action changed since, so it can be read again."
         }
       },
       "required": [
@@ -1644,7 +1705,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Retry Replenishment Action",
+      "title": "Retry recommendation draft",
       "readOnlyHint": false,
       "openWorldHint": true,
       "destructiveHint": true,
@@ -1704,7 +1765,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Create Location",
+      "title": "Create location",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": false,
@@ -1741,7 +1802,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Set Stock At Location",
+      "title": "Set stock at location",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": true,
@@ -1750,7 +1811,7 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     "name": "rr_acknowledge_alert",
-    "description": "Acknowledge an open alert. Sets status='acknowledged', stamps acknowledged_at + acknowledged_by, and writes an alert_audit row. Use when the seller has read and accepted an alert.",
+    "description": "Acknowledge an open alert. Sets status='acknowledged', stamps acknowledged_at + acknowledged_by, and writes an alert_audit row. For an alert the seller has read and accepted.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1768,7 +1829,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Acknowledge Alert",
+      "title": "Acknowledge alert",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": true,
@@ -1777,7 +1838,7 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     "name": "rr_trigger_sync",
-    "description": "Trigger an inventory sync for a connected Shopify or Amazon store. Skipped if a sync ran in the last 5 minutes for this connector type. Returns {status: 'queued'|'skipped', sync_event_id, requested_store_id, blocking_sync_event_id, message}. Pass sync_event_id to rr_get_sync_status to follow the request; sync_run_id is not known at queue time and is always null here. skipped: 'fba_inventory_not_applicable' is permanent for that store (Amazon gives it no FBA inventory access); do not retry it.",
+    "description": "Trigger an inventory sync for a connected Shopify or Amazon store. Skipped if a sync ran in the last 5 minutes for this connector type. Returns {status: 'queued'|'skipped', sync_event_id, requested_store_id, blocking_sync_event_id, message}. Pass sync_event_id to rr_get_sync_status to follow the request; sync_run_id is not known at queue time and is always null here. skipped: 'fba_inventory_not_applicable' is permanent for that store (Amazon gives it no FBA inventory access), so a repeat request returns the same answer.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1799,7 +1860,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Trigger Sync",
+      "title": "Request inventory sync",
       "readOnlyHint": false,
       "openWorldHint": true,
       "destructiveHint": true,
@@ -1807,8 +1868,8 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_set_agent_context",
-    "description": "Save a small JSON object under a namespace and key, for an agent to read back later. Never store secrets or personal data in it. The namespace must have been granted to this API key.",
+    "name": "rr_save_memory_entry",
+    "description": "Save a small JSON object under a namespace and key, for an agent to read back later. It is not for secrets or personal data; values with obvious secret or contact-detail shapes are refused. The namespace must have been granted to this API key.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1842,7 +1903,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Set Agent Context",
+      "title": "Save memory entry",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": true,
@@ -1850,8 +1911,8 @@ const TOOLS: ToolDefinition[] = [
     }
   },
   {
-    "name": "rr_delete_agent_context",
-    "description": "Delete one saved agent context entry by namespace and key. The namespace must have been granted to this API key.",
+    "name": "rr_delete_memory_entry",
+    "description": "Delete one saved memory entry by namespace and key. The namespace must have been granted to this API key.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1870,7 +1931,7 @@ const TOOLS: ToolDefinition[] = [
       ]
     },
     "annotations": {
-      "title": "Delete Agent Context",
+      "title": "Delete memory entry",
       "readOnlyHint": false,
       "openWorldHint": false,
       "destructiveHint": true,
@@ -1903,7 +1964,7 @@ async function callApi(toolName: string, input: Record<string, unknown>): Promis
 
 async function main() {
   const server = new Server(
-    { name: 'replenishradar', version: '1.2.0' },
+    { name: 'replenishradar', version: '1.3.0' },
     { capabilities: { tools: {} } },
   );
 

@@ -9,10 +9,10 @@ Finds stock that is not earning its keep. Read-only.
 
 ## Steps
 
-1. Call `rr_get_slow_movers` with `days` set to 90 (the maximum) unless the seller asks for a shorter window. Page with `cursor` while `has_more` is true. Each product has stock on hand, units sold and a `dead_stock` flag: true means held stock with no sale in 12 months; null means the sales history is too short to tell.
-2. Call `rr_get_top_sellers` with the same window, so the answer can contrast what sells against what sits.
+1. Call `rr_list_slow_movers` with `days` set to 90 (the maximum) unless the seller asks for a shorter window. Page with `cursor` while `has_more` is true. Each product has stock on hand, units sold and a `dead_stock` flag: true means held stock with no sale in 12 months; null means the sales history is too short to tell.
+2. Call `rr_list_top_sellers` with the same window, so the answer can contrast what sells against what sits.
 3. Call `rr_get_inventory_value` for total units and value held.
-4. For any product the seller is considering dropping, check `rr_get_suggested_purchase_orders` and `rr_get_replenishment_actions` with its SKU. If ReplenishRadar is still suggesting a reorder for a slow mover, point that out.
+4. For any product the seller is considering dropping, check `rr_list_suggested_purchase_orders` and `rr_list_recommendations` with its SKU. If ReplenishRadar is still suggesting a reorder for a slow mover, point that out.
 
 ## The answer
 
