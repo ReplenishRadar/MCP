@@ -1964,7 +1964,7 @@ async function callApi(toolName: string, input: Record<string, unknown>): Promis
 
 async function main() {
   const server = new Server(
-    { name: 'replenishradar', version: '1.3.0' },
+    { name: 'replenishradar', version: '1.3.1' },
     { capabilities: { tools: {} } },
   );
 

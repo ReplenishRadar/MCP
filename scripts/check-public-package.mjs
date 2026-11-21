@@ -60,6 +60,14 @@ expect(manifest.smithery?.repository === expectedRepository,
 expect(manifest.tools?.length > 0, 'manifest has no tools');
 expect((registry.description ?? '').match(/\((\d+) tools[,)]/)?.[1] === String(manifest.tools.length),
   'server description tool count does not match manifest');
+// The official MCP Registry refuses a description over 100 characters (422 "expected length <= 100").
+// Checked here because the Release workflow stages on npm before the Registry is asked: a long one
+// was staged and approved as 1.3.0, which then could never be listed.
+const REGISTRY_DESCRIPTION_MAX = 100;
+// Counted in characters, not UTF-16 units. The Release workflow also runs the Registry's own validate.
+const descriptionLength = [...(registry.description ?? '')].length;
+expect(descriptionLength <= REGISTRY_DESCRIPTION_MAX,
+  `server description is ${descriptionLength} characters; the MCP Registry allows ${REGISTRY_DESCRIPTION_MAX}`);
 expect(runtime.includes(`version: '${pkg.version}'`),
   `${path.relative(root, runtimePath)} does not report package version ${pkg.version}`);
 
