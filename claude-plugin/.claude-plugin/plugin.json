@@ -2,21 +2,28 @@
   "name": "replenishradar",
   "displayName": "ReplenishRadar",
   "version": "1.1.0",
-  "description": "Inventory, stockout risk, demand forecasts and purchase orders for your Shopify and Amazon store, with skills for a weekly reorder review, a stockout check, a product deep dive, purchase order follow-through, overstock review and data health.",
+  "description": "Inventory, stockout risk, demand forecasts and purchase orders for your Shopify and Amazon store, with skills for a weekly reorder review, a stockout check, a product deep dive, recommendation and purchase order follow-through, expiry and overstock reviews, stock counts and data health.",
   "author": {
     "name": "ReplenishRadar",
     "url": "https://replenishradar.com"
   },
   "homepage": "https://replenishradar.com/docs/connector",
+  "repository": "https://github.com/ReplenishRadar/MCP",
   "license": "MIT",
+  "documentationUrl": "https://replenishradar.com/docs/connector",
+  "supportUrl": "https://replenishradar.com/contact",
   "privacyPolicyUrl": "https://replenishradar.com/privacy",
+  "termsOfServiceUrl": "https://replenishradar.com/terms",
   "icon": ".claude-plugin/icon.png",
   "keywords": [
     "inventory",
     "shopify",
     "amazon",
+    "fba",
     "forecasting",
+    "stockouts",
     "purchase-orders",
-    "replenishment"
+    "replenishment",
+    "expiration-dates"
   ]
 }
