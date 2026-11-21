@@ -1,0 +1,14 @@
+{
+  "name": "replenishradar",
+  "description": "The ReplenishRadar plugin for Claude: the ReplenishRadar connector and inventory skills for Shopify and Amazon sellers.",
+  "owner": {
+    "name": "ReplenishRadar",
+    "url": "https://replenishradar.com"
+  },
+  "plugins": [
+    {
+      "name": "replenishradar",
+      "source": "./claude-plugin"
+    }
+  ]
+}

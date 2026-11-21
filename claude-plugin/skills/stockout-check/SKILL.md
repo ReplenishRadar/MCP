@@ -28,4 +28,6 @@ Lead with the count: "3 products are critical, 5 are high risk." Then list the c
 
 - "What should I order?" Use the weekly-reorder-review skill.
 - "Tell me more about this product." Use the sku-deep-dive skill.
+- "What happened this week?" Call `rr_get_recent_activity`. It covers the last 7 days unless you pass `days` (up to 30) and returns counts only: alerts created and resolved, purchase orders created and received, sync runs and failures. It contains no money amounts.
+- "Is anything about to expire?" Use the expiry-check skill.
 - "Mark that alert as seen." Call `rr_acknowledge_alert` with the `alert_id` and an optional `note`. This changes the alert's status and needs the "make changes" permission.

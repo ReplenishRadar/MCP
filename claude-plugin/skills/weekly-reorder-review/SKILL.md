@@ -28,7 +28,7 @@ Keep money out of the answer unless the seller asks for it. Cost and revenue fig
 Only when the seller asks:
 
 - To create a draft order for a supplier, call `rr_create_purchase_order` with the supplier's `vendor_id`, a `destination_location_id`, and `items` of `{sku, quantity, unit_cost}`. If you do not know the receiving location or a unit cost, ask; do not invent one. The order is created as a draft and nothing goes to the supplier.
-- If the plan came from prepared replenishment work (`rr_list_recommendations`), use `rr_preview_recommendation` and then `rr_create_draft_from_recommendation` instead, so the draft stays linked to that work. Pass the `updated_at` from the preview as `expected_updated_at` and a fresh value of your choosing as `idempotency_key`.
+- If the plan came from prepared replenishment work (`rr_list_recommendations`), use `rr_preview_recommendation` and then `rr_create_draft_from_recommendation` instead, so the draft stays linked to that work. Pass the `updated_at` from the preview as `expected_updated_at` and a fresh value of your choosing as `idempotency_key`. The recommendation-follow-through skill has the full routine, including what to do when a call is refused.
 - Sending an order to a supplier is a separate step. See the purchase-order-follow-through skill.
 
 If a write is refused because the connection cannot make changes, tell the seller they can reconnect ReplenishRadar and tick "make changes" on the sign-in screen. Do not retry the write.
