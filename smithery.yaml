@@ -3,7 +3,7 @@
 
 name: "@replenishradar/mcp-server"
 description: "Inventory forecasting and replenishment for Shopify and Amazon sellers: stock levels, stockout forecasts, reorder suggestions, sales analytics and suppliers over MCP. Create purchase orders and send them only after human approval."
-version: "1.3.0"
+version: "1.3.1"
 license: "Proprietary"
 homepage: "https://replenishradar.com"
 repository: "https://github.com/ReplenishRadar/MCP"
@@ -15,7 +15,7 @@ server:
 
 auth:
   type: bearer
-  description: "API key with rr_sk_ prefix. Generate keys in Settings > API Keys at app.replenishradar.com. Organization is derived from the key -- no separate header needed."
+  description: "API key with rr_sk_ prefix. Generate keys in Settings > Apps and AI, under API keys, at app.replenishradar.com. Organization is derived from the key -- no separate header needed."
 
 configSchema:
   type: object

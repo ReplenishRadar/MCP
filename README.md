@@ -6,7 +6,7 @@ Connect AI agents to live [ReplenishRadar](https://replenishradar.com) inventory
 
 ## Setup
 
-1. Get your API key from **ReplenishRadar > Settings > API Keys**.
+1. Get your API key from **ReplenishRadar > Settings > Apps and AI**, under API keys.
 2. Add this server to your MCP client config. In Claude Desktop, open **Settings > Developer > Edit Config**:
 
 ```json
@@ -161,7 +161,7 @@ The four tools are listed above with the read and basic-write tools.
 
 Rules and limits:
 
-- **Namespaces are code-owned and per-key allowlisted.** A human admin must grant your API key read/write/delete on each namespace in Settings > API Keys. Same-organization access alone is **not** sufficient.
+- **Namespaces are code-owned and per-key allowlisted.** A human admin must grant your API key read/write/delete on each namespace in Settings > Apps and AI (API keys card). Same-organization access alone is **not** sufficient.
 - **No secrets, no raw PII.** Writes that look like tokens, passwords, private keys, credentials, or raw emails/phones/addresses are rejected.
 - `value` must be a **JSON object** (not a scalar or array), capped at **16 KiB** serialized.
 - `ttl_seconds` is optional and capped at **90 days**; with no TTL the entry persists while the organization exists.
@@ -171,7 +171,7 @@ Rules and limits:
 
 ## Spend budgets (admin-managed, no MCP tool)
 
-Per-API-key spend budgets - per-PO value cap, rolling-24h daily cap, max transfer quantity delta, an `autonomous_enabled` flag, and vendor / destination / transfer-source (or route-pair) allowlists - constrain what an autonomous key may buy or move. They are managed **only** by a human admin in Settings > API Keys (a JWT-admin Settings API); there is no MCP tool to read or change a budget, and an API key cannot reach the budget routes, not even for its own caps. Budgets are consumed only by autonomous send/commit, autonomous mode is off by default, and a denied autonomous action receives only a short decision reason - never the cap amounts, the allowlists, or another key's ledger.
+Per-API-key spend budgets - per-PO value cap, rolling-24h daily cap, max transfer quantity delta, an `autonomous_enabled` flag, and vendor / destination / transfer-source (or route-pair) allowlists - constrain what an autonomous key may buy or move. They are managed **only** by a human admin in Settings > Apps and AI (API keys card) (a JWT-admin Settings API); there is no MCP tool to read or change a budget, and an API key cannot reach the budget routes, not even for its own caps. Budgets are consumed only by autonomous send/commit, autonomous mode is off by default, and a denied autonomous action receives only a short decision reason - never the cap amounts, the allowlists, or another key's ledger.
 
 ## Rate Limits
 

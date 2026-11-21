@@ -20,7 +20,7 @@
       "schemes": [
         {
           "type": "bearer",
-          "description": "API key with rr_sk_ prefix. Generate keys in Settings > API Keys at app.replenishradar.com. Organization is derived from the key -- no separate header needed."
+          "description": "API key with rr_sk_ prefix. Generate keys in Settings > Apps and AI, under API keys, at app.replenishradar.com. Organization is derived from the key -- no separate header needed."
         },
         {
           "type": "oauth2",

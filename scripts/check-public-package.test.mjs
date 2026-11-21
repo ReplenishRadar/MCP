@@ -57,6 +57,33 @@ test('--runtime dist fails loudly when the build output is missing', () => {
   }
 });
 
+// Writes a description of exactly `length` characters that still carries the tool count.
+function runWithDescriptionOfLength(length) {
+  const dir = fixtureWithoutDist();
+  try {
+    const serverPath = path.join(dir, 'server.json');
+    const server = JSON.parse(fs.readFileSync(serverPath, 'utf8'));
+    const count = JSON.parse(fs.readFileSync(path.join(dir, 'tools.manifest.json'), 'utf8')).tools.length;
+    const suffix = ` (${count} tools)`;
+    server.description = `${'x'.repeat(length - suffix.length)}${suffix}`;
+    fs.writeFileSync(serverPath, JSON.stringify(server, null, 2));
+    return run(dir, ['--runtime', 'src']);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('a description the MCP Registry would refuse fails before anything is staged', () => {
+  const result = runWithDescriptionOfLength(101);
+  assert.equal(result.status, 1, `expected fail, got:\n${result.stdout}${result.stderr}`);
+  assert.match(result.stderr, /101 characters; the MCP Registry allows 100/);
+});
+
+test('a description at exactly the Registry limit passes', () => {
+  const result = runWithDescriptionOfLength(100);
+  assert.equal(result.status, 0, `expected pass, got:\n${result.stdout}${result.stderr}`);
+});
+
 test('an unknown --runtime value is rejected rather than guessed', () => {
   const dir = fixtureWithoutDist();
   try {
